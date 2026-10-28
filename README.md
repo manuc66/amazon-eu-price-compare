@@ -74,12 +74,22 @@ npm, babel, webpack and the TypeScript compiler are needed for building.
 
 ```
 npm i
-npm run build
+npm run build      # both browsers, in dist/chrome and dist/firefox
+npm run release    # tests, both builds, the two store zips and the add-on lint
 ```
 
-`npm run build` runs `tsc --noEmit` first (Babel only strips the types, it does
-not check them), then builds both browsers. Use `npm run typecheck` to check the
-types on their own.
+| command | what it does |
+| --- | --- |
+| `npm run build` | `tsc --noEmit`, then both browsers |
+| `npm run build:chrome` / `build:firefox` | a single target |
+| `npm run typecheck` | types only (Babel strips them, it does not check them) |
+| `npm test` | vitest, single run (`test:watch` to iterate) |
+| `npm run zip` | `dist/amazon-eu-price-compare-chrome.zip` and `-firefox.zip` |
+| `npm run lint:firefox` | `web-ext lint` on the Firefox build |
+| `npm run release` | everything above, in the order a release needs |
+
+`npm run release` stops at the first failing step, so a red test, a type error
+or a lint error never produces a zip.
 
 ### 6.2 Build output
 
