@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { CURRENCY_SYMBOLS, EUR_PER_UNIT, MARKETS, getMarket, getMarketForUrl } from '../src/markets'
+import { CURRENCY_SYMBOLS, EUR_PER_UNIT, MARKETS, getMarket, getMarketForUrl, marketsToCompare } from '../src/markets'
 
 describe('MARKETS', () => {
 	it('covers the ten European Amazon marketplaces', () => {
-		expect(MARKETS.map((market) => market.country).sort()).toEqual(
+		const european = MARKETS.filter((market) => market.optional !== true)
+		expect(european.map((market) => market.country).sort()).toEqual(
 			['be', 'de', 'es', 'fr', 'ie', 'it', 'nl', 'pl', 'se', 'uk']
 		)
+	})
+
+	it('offers amazon.com only as an optional market', () => {
+		expect(MARKETS.filter((market) => market.optional === true).map((market) => market.country)).toEqual(['us'])
+		expect(getMarket('us')?.note).toBeTruthy()
 	})
 
 	it('has one unique country and one unique domain per market', () => {
@@ -32,7 +38,7 @@ describe('getMarket', () => {
 	})
 
 	it('returns undefined for an unknown country', () => {
-		expect(getMarket('us')).toBeUndefined()
+		expect(getMarket('jp')).toBeUndefined()
 	})
 })
 
@@ -53,9 +59,13 @@ describe('getMarketForUrl', () => {
 		expect(getMarketForUrl('https://www.amazon.com.be/dp/B08N5WRWNW')?.domain).toBe('amazon.com.be')
 	})
 
+	it('detects amazon.com, which is only compared on demand', () => {
+		expect(getMarketForUrl('https://www.amazon.com/dp/B08N5WRWNW')?.country).toBe('us')
+	})
+
 	it('ignores marketplaces the extension does not compare', () => {
-		expect(getMarketForUrl('https://www.amazon.com/dp/B08N5WRWNW')).toBeUndefined()
 		expect(getMarketForUrl('https://www.amazon.com.tr/dp/B08N5WRWNW')).toBeUndefined()
+		expect(getMarketForUrl('https://www.amazon.co.jp/dp/B08N5WRWNW')).toBeUndefined()
 	})
 
 	it('does not match a domain that merely contains amazon.de', () => {
@@ -65,5 +75,24 @@ describe('getMarketForUrl', () => {
 	it('returns undefined for a relative or malformed url', () => {
 		expect(getMarketForUrl('/dp/B08N5WRWNW')).toBeUndefined()
 		expect(getMarketForUrl('')).toBeUndefined()
+	})
+})
+
+describe('marketsToCompare', () => {
+	it('compares the other European stores by default', () => {
+		const countries = marketsToCompare('de', false).map((market) => market.country)
+		expect(countries).toHaveLength(9)
+		expect(countries).not.toContain('de')
+		expect(countries).not.toContain('us')
+	})
+
+	it('adds amazon.com when the user enabled it', () => {
+		const countries = marketsToCompare('de', true).map((market) => market.country)
+		expect(countries).toHaveLength(10)
+		expect(countries).toContain('us')
+	})
+
+	it('never compares the store the user is browsing', () => {
+		expect(marketsToCompare('us', true).map((market) => market.country)).not.toContain('us')
 	})
 })

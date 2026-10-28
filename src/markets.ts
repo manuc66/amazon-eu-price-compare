@@ -1,4 +1,4 @@
-export type Currency = 'EUR' | 'GBP' | 'SEK' | 'PLN'
+export type Currency = 'EUR' | 'GBP' | 'SEK' | 'PLN' | 'USD'
 
 export interface Market {
 	/** country code, also used as the key of the redux state */
@@ -6,10 +6,14 @@ export interface Market {
 	/** store domain, e.g. `amazon.com.be` */
 	domain: string
 	currency: Currency
+	/** compared only when the user enables it in the options page */
+	optional?: boolean
+	/** caveat displayed next to the price */
+	note?: string
 }
 
 /**
- * The ten European Amazon marketplaces.
+ * The ten European Amazon marketplaces, plus amazon.com as an optional extra.
  * https://sell.amazon.fr/en/programmes/vendre-en-europe
  */
 export const MARKETS: Market[] = [
@@ -22,7 +26,14 @@ export const MARKETS: Market[] = [
 	{ country: 'se', domain: 'amazon.se', currency: 'SEK' },
 	{ country: 'pl', domain: 'amazon.pl', currency: 'PLN' },
 	{ country: 'be', domain: 'amazon.com.be', currency: 'EUR' },
-	{ country: 'ie', domain: 'amazon.ie', currency: 'EUR' }
+	{ country: 'ie', domain: 'amazon.ie', currency: 'EUR' },
+	{
+		country: 'us',
+		domain: 'amazon.com',
+		currency: 'USD',
+		optional: true,
+		note: 'excl. VAT & shipping'
+	}
 ]
 
 /** The currency every price is converted to, for the comparison. */
@@ -36,14 +47,16 @@ export const EUR_PER_UNIT: Record<Currency, number> = {
 	EUR: 1,
 	GBP: 1.17,
 	SEK: 0.088,
-	PLN: 0.235
+	PLN: 0.235,
+	USD: 0.86
 }
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
 	EUR: '€',
 	GBP: '£',
 	SEK: 'kr',
-	PLN: 'zł'
+	PLN: 'zł',
+	USD: '$'
 }
 
 export function getMarket(country: string): Market | undefined {
@@ -57,6 +70,13 @@ export function getMarketForUrl(url: string): Market | undefined {
 		return undefined
 	}
 	return MARKETS.find((market) => host === market.domain || host.endsWith('.' + market.domain))
+}
+
+/** The stores to compare with the page being browsed. */
+export function marketsToCompare(currentCountry: string, includeOptionalMarkets: boolean): Market[] {
+	return MARKETS.filter((market) =>
+		market.country !== currentCountry && (market.optional !== true || includeOptionalMarkets)
+	)
 }
 
 function extractHostname(url: string): string | null {

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import PriceList from '../src/components/PriceList'
 import type { CountryPrice, CountryRanks, Options } from '../src/types'
 
-function render(price: CountryPrice[], rank: CountryRanks = {}, options: Options = { showRanks: false }): string {
+function render(price: CountryPrice[], rank: CountryRanks = {}, options: Options = { showRanks: false, showUsMarket: true }): string {
 	return renderToStaticMarkup(
 		<PriceList
 			price={price}
@@ -73,10 +73,17 @@ describe('PriceList', () => {
 		expect(rows(html).map((r) => r.match(/>([A-Z]{2})</)?.[1])).toEqual(['UK', 'DE', 'PL'])
 	})
 
+	it('marks the US price as excluding VAT and shipping', () => {
+		const row = rowOf(render([{ country: 'us', price: 199 }]), 'us')
+		expect(row).toContain('$ 199.00')
+		expect(row).toContain('€ 171.14')
+		expect(row).toContain('excl. VAT')
+	})
+
 	it('adds the rank column only when the option is enabled', () => {
 		const price = [{ country: 'de', price: 20 }]
-		const withoutRanks = render(price, { de: '#1 in Electronics' }, { showRanks: false })
-		const withRanks = render(price, { de: '#1 in Electronics' }, { showRanks: true })
+		const withoutRanks = render(price, { de: '#1 in Electronics' }, { showRanks: false, showUsMarket: false })
+		const withRanks = render(price, { de: '#1 in Electronics' }, { showRanks: true, showUsMarket: false })
 
 		expect(withoutRanks).not.toContain('#1 in Electronics')
 		expect(withRanks).toContain('#1 in Electronics')

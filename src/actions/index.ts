@@ -1,6 +1,6 @@
 import * as amzUtil from "../util/AmazonUtils"
 import type { ThunkAction } from 'redux-thunk'
-import { MARKETS } from '../markets'
+import { marketsToCompare } from '../markets'
 import type { Market } from '../markets'
 import type { Options } from '../types'
 import type { RootState } from '../reducers'
@@ -79,7 +79,7 @@ export function receiveOptions(items: Options): ReceiveOptionsAction {
 
 // async action
 export function getCurrentPageUrl(): AppThunk {
-	return (dispatch) => {
+	return (dispatch, getState) => {
 		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 			var tab = tabs[0]
 			if (tab === undefined || tab.id === undefined || typeof tab.url !== 'string') {
@@ -105,8 +105,8 @@ export function getCurrentPageUrl(): AppThunk {
 				}
 			})
 
-			const marketsToSearch = MARKETS.filter((market) => market.country !== country)
-			for (const market of marketsToSearch) {
+			const markets = marketsToCompare(country, getState().options.showUsMarket)
+			for (const market of markets) {
 				dispatch(getCountryPrice(productID, market))
 			}
 		})
@@ -117,9 +117,13 @@ export function getCurrentPageUrl(): AppThunk {
 export function getOptions(): AppThunk {
 	return (dispatch) => {
 		chrome.storage.sync.get({
-			showRanks: false
+			showRanks: false,
+			showUsMarket: false
 		}, function (items) {
-			dispatch(receiveOptions({ showRanks: items['showRanks'] === true }))
+			dispatch(receiveOptions({
+				showRanks: items['showRanks'] === true,
+				showUsMarket: items['showUsMarket'] === true
+			}))
 		})
 	}
 }

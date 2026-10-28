@@ -132,8 +132,11 @@ describe('getCountryFromAmazonProductPageUrl', () => {
 		expect(getCountryFromAmazonProductPageUrl(url)).toBe(expected)
 	})
 
+	it('knows about amazon.com, compared only on demand', () => {
+		expect(getCountryFromAmazonProductPageUrl('https://www.amazon.com/dp/B08N5WRWNW')).toBe('us')
+	})
+
 	it('returns null for a store the extension does not support', () => {
-		expect(getCountryFromAmazonProductPageUrl('https://www.amazon.com/dp/B08N5WRWNW')).toBeNull()
 		expect(getCountryFromAmazonProductPageUrl('https://www.amazon.com.tr/dp/B08N5WRWNW')).toBeNull()
 	})
 })

@@ -28,7 +28,7 @@ const rank: Reducer<CountryRanks, Action> = (state = {}, action) => {
 	}
 }
 
-const options: Reducer<Options, Action> = (state = { showRanks: false }, action) => {
+const options: Reducer<Options, Action> = (state = { showRanks: false, showUsMarket: false }, action) => {
 	switch (action.type) {
 		case RECEIVE_OPTIONS:
 			return action.items
@@ -47,7 +47,7 @@ export interface AppState {
 const initialState: AppState = {
 	price: [],
 	rank: {},
-	options: { showRanks: false }
+	options: { showRanks: false, showUsMarket: false }
 }
 
 // written out instead of combineReducers(): with the redux 5 typings the inferred

@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, getMarket } from '../markets'
+import type { Currency } from '../markets'
 import type { CountryPrice, CountryRanks, Options } from '../types'
 
 export interface PriceListProps {
@@ -13,8 +14,10 @@ export interface PriceListProps {
 interface PriceRow {
 	country: string
 	url?: string
+	currency: Currency
 	nativePrice: string
 	referencePrice: string
+	note?: string
 	rank?: string | null
 }
 
@@ -42,7 +45,6 @@ export default class PriceList extends Component<PriceListProps> {
 
 		var showRanks = this.props.options.showRanks
 		var ranks = this.props.rank
-		const referenceSymbol = CURRENCY_SYMBOLS[REFERENCE_CURRENCY]
 
 		const prices = this.props.price.map(function(amz): PriceRow {
 			var market = getMarket(amz.country)
@@ -50,8 +52,10 @@ export default class PriceList extends Component<PriceListProps> {
 			return {
 				country: amz.country,
 				url: amz.url,
+				currency: currency,
 				nativePrice: formatPrice(amz.price),
 				referencePrice: formatPrice(amz.price * EUR_PER_UNIT[currency]),
+				note: market === undefined ? undefined : market.note,
 				rank: showRanks ? ranks[amz.country] : undefined
 			}
 		})
@@ -61,15 +65,13 @@ export default class PriceList extends Component<PriceListProps> {
 		})
 
 		const price_list = prices.map(function(amz) {
-			var market = getMarket(amz.country)
-			var currency = market === undefined ? REFERENCE_CURRENCY : market.currency
 			return (
 				<tr key={amz.country}>
 				<td className="amazon">Amazon</td>
-				<td className="country">{amz.country.toUpperCase()}</td>
-				{currency !== REFERENCE_CURRENCY &&
-					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[currency]} {amz.nativePrice}</a></td>}
-				<td className="price"><a href={amz.url} target="_blank">{referenceSymbol} {amz.referencePrice}</a></td>
+				<td className="country">{amz.country.toUpperCase()}{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}</td>
+				{amz.currency !== REFERENCE_CURRENCY &&
+					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a></td>}
+				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
 				{showRanks === true &&
 					<td className="rank">{amz.rank}</td>}
 					</tr>

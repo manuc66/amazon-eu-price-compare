@@ -50,6 +50,13 @@ body {
   padding: 20px;
 }
 
+.options-help {
+  font-size: 13px;
+  color: #666;
+  max-width: 420px;
+  padding-top: 6px;
+}
+
 .slider {
   position: absolute;
   cursor: pointer;
@@ -105,6 +112,20 @@ input:checked + .slider:before {
   </div>
   <label class="switch">
     <input type="checkbox" id="show-ranks">
+    <div class="slider round"></div>
+  </label>
+</div>
+
+<div class="options-container">
+  <div class="options-label">
+    Compare with amazon.com (US)
+    <div class="options-help">
+      Prices on amazon.com exclude European VAT and international shipping,
+      so they are only indicative.
+    </div>
+  </div>
+  <label class="switch">
+    <input type="checkbox" id="show-us-market">
     <div class="slider round"></div>
   </label>
 </div>

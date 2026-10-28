@@ -1,11 +1,19 @@
-function save_options() {
-	var showRanksElement = document.getElementById('show-ranks')
-	if (!(showRanksElement instanceof HTMLInputElement)) {
-		return
+function isChecked(id: string): boolean {
+	var element = document.getElementById(id)
+	return element instanceof HTMLInputElement && element.checked
+}
+
+function setChecked(id: string, checked: boolean): void {
+	var element = document.getElementById(id)
+	if (element instanceof HTMLInputElement) {
+		element.checked = checked
 	}
-	var showRanks = showRanksElement.checked
+}
+
+export function saveOptions(): void {
 	chrome.storage.sync.set({
-		showRanks: showRanks
+		showRanks: isChecked('show-ranks'),
+		showUsMarket: isChecked('show-us-market')
 	}, function() {
 		var status = document.getElementById('status')
 		if (status !== null) {
@@ -16,20 +24,19 @@ function save_options() {
 	})
 }
 
-function restore_options() {
+export function restoreOptions(): void {
 	chrome.storage.sync.get({
-		showRanks: false
+		showRanks: false,
+		showUsMarket: false
 	}, function(items) {
 		console.log(items)
-		var showRanksElement = document.getElementById('show-ranks')
-		if (showRanksElement instanceof HTMLInputElement) {
-			showRanksElement.checked = items['showRanks'] === true
-		}
+		setChecked('show-ranks', items['showRanks'] === true)
+		setChecked('show-us-market', items['showUsMarket'] === true)
 	})
 }
 
-document.addEventListener('DOMContentLoaded', restore_options)
+document.addEventListener('DOMContentLoaded', restoreOptions)
 var saveButton = document.getElementById('save')
 if (saveButton !== null) {
-	saveButton.addEventListener('click', save_options)
+	saveButton.addEventListener('click', saveOptions)
 }

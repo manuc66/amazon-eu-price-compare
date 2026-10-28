@@ -15,7 +15,7 @@ describe('rootReducer', () => {
 		expect(rootReducer(undefined, UNKNOWN_ACTION)).toEqual({
 			price: [],
 			rank: {},
-			options: { showRanks: false }
+			options: { showRanks: false, showUsMarket: false }
 		})
 	})
 
@@ -49,8 +49,8 @@ describe('rootReducer', () => {
 	})
 
 	it('replaces the options', () => {
-		const state = rootReducer(undefined, { type: RECEIVE_OPTIONS, items: { showRanks: true } })
-		expect(state.options).toEqual({ showRanks: true })
+		const state = rootReducer(undefined, { type: RECEIVE_OPTIONS, items: { showRanks: true, showUsMarket: true } })
+		expect(state.options).toEqual({ showRanks: true, showUsMarket: true })
 	})
 
 	it('returns the same state object for an unknown action', () => {

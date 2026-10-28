@@ -30,6 +30,11 @@ If you are a frequent Amazon user living in Europe, chances are, you have alread
 They are listed in `src/markets.ts`, which is the single place to edit to change
 what the extension compares, and a test keeps the two manifests in sync with it.
 
+**amazon.com is optional.** It can be enabled in the options page, but it is off
+by default: its prices are in USD, exclude European VAT and international
+shipping, and many items are not shipped to Europe at all. When it is enabled,
+the row is marked "excl. VAT & shipping" and its euro price is indicative only.
+
 If you are a frequent Amazon user living in Europe, chances are, you have also already figured out that most of the items are sold in all the markets above; they can be shipped within EU; but the prices differ, sometimes greatly.
 
 So let me describe normally as a non-millionaire what you would do:
@@ -106,8 +111,9 @@ npm run test:watch
 ```
 
 Covered: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the market
-table, the price list rendering, the reducers, the content script message
-handling, and the consistency between `src/markets.ts` and the two manifests.
+table and the store selection, the price list rendering, the reducers, the
+content script message handling, the options page, and the consistency between
+`src/markets.ts` and the two manifests.
 
 The price fixtures use both the German (`1.234,56 €`) and British (`£1,234.56`)
 formats on purpose: the Amazon markets disagree on decimal and thousands
@@ -117,6 +123,8 @@ separators.
 
 ### Unreleased
 
+- Optional comparison with **amazon.com** (USD), disabled by default: prices
+  there exclude VAT and shipping, so the row is marked as indicative.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
   **amazon.ie** (EUR), for ten stores in total.
 - Replace the hardcoded country list, the per-country display branches and the
