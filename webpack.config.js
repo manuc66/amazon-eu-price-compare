@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack')
 
 // set by scripts/build.js, which builds one browser target at a time
 const outputDir = process.env.EXTENSION_OUTPUT_DIR || path.resolve(__dirname, 'dist', 'chrome')
@@ -16,6 +17,12 @@ module.exports = {
     path: outputDir,
     filename: '[name].js'
   },
+  plugins: [
+    // replaced at build time, so the dev-only middlewares are dropped by the minifier
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    })
+  ],
   module: {
     rules: [
       {
