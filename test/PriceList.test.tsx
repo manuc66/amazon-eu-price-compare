@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import PriceList from '../src/components/PriceList'
 import type { CountryPrice, CountryRanks, Options, StoreOutcome } from '../src/types'
@@ -174,10 +176,15 @@ describe('PriceList', () => {
 		expect(row).not.toContain('not found')
 	})
 
-	it('builds no history link on a failed row', () => {
+	it('still links the price history of a store where nothing was found', () => {
 		const row = rowOf(render([{ country: 'uk', price: 10 }], {}, undefined, ASIN, false, { de: 'not-found' }), 'DE')
-		expect(row).not.toContain('camelcamelcamel')
-		expect(row).not.toContain('keepa.com')
+		expect(row).toContain(`https://de.camelcamelcamel.com/product/${ASIN}`)
+		expect(row).toContain(`https://keepa.com/#!product/3-${ASIN}`)
+	})
+
+	it('still links the price history of a store that could not be loaded', () => {
+		const row = rowOf(render([{ country: 'uk', price: 10 }], {}, undefined, ASIN, false, { it: 'error' }), 'IT')
+		expect(row).toContain(`https://keepa.com/#!product/8-${ASIN}`)
 	})
 
 	it('adds the rank column only when the option is enabled', () => {
@@ -187,5 +194,73 @@ describe('PriceList', () => {
 
 		expect(withoutRanks).not.toContain('#1 in Electronics')
 		expect(withRanks).toContain('#1 in Electronics')
+	})
+})
+
+describe('PriceList links', () => {
+	afterEach(() => {
+		vi.useRealTimers()
+		vi.unstubAllGlobals()
+	})
+
+	async function mount(html: { price: CountryPrice[] } = { price: [{ country: 'de', price: 20, url: 'https://www.amazon.de/dp/' + ASIN }] }) {
+		vi.stubGlobal('chrome', { tabs: { onUpdated: { addListener: () => {} } } })
+		const container = document.createElement('div')
+		document.body.appendChild(container)
+		const root = createRoot(container)
+
+		await act(async () => {
+			root.render(
+				<PriceList
+					price={html.price}
+					rank={{}}
+					options={{ showRanks: false, enabledCountries: [] }}
+					productID={ASIN}
+					loading={false}
+					failed={{ us: 'not-found' }}
+					getOptions={() => {}}
+					getCurrentPageUrl={() => {}}
+					refresh={() => {}}
+				/>
+			)
+		})
+
+		return {
+			container,
+			unmount: () => {
+				act(() => root.unmount())
+				container.remove()
+			}
+		}
+	}
+
+	it('opens store links in a new tab', async () => {
+		const { container, unmount } = await mount()
+		const links = Array.from(container.querySelectorAll('a')) as HTMLAnchorElement[]
+
+		expect(links.length).toBeGreaterThan(0)
+		for (const link of links) {
+			expect(link.getAttribute('target')).toBe('_blank')
+			expect(link.getAttribute('rel')).toBe('noreferrer')
+		}
+		unmount()
+	})
+
+	it('closes the popup when a link is clicked', async () => {
+		vi.useFakeTimers()
+		const close = vi.spyOn(window, 'close').mockImplementation(() => {})
+		const { container, unmount } = await mount()
+		const link = container.querySelector('a') as HTMLAnchorElement
+
+		act(() => {
+			link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+		})
+		act(() => {
+			vi.runAllTimers()
+		})
+
+		expect(close).toHaveBeenCalled()
+		unmount()
+		close.mockRestore()
 	})
 })

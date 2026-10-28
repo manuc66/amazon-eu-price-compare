@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, camelUrl, getMarket, keepaUrl } from '../markets'
-import type { Currency } from '../markets'
+import type { Currency, Market } from '../markets'
 import type { CountryPrice, CountryRanks, Options, StoreOutcome } from '../types'
 
 export interface PriceListProps {
@@ -26,15 +26,53 @@ interface PriceRow {
 	nativePrice: string
 	referencePrice: string
 	note?: string
-	/** camelcamelcamel price history, only for the stores it covers */
-	camel: string | null
-	/** Keepa price history, only for the stores it covers */
-	keepa: string | null
 	rank?: string | null
 }
 
 function formatPrice(value: number): string {
 	return value.toFixed(2)
+}
+
+/** The popup is not a page: once a link has opened its tab, it should go away. */
+function closePopup(): void {
+	// let the browser handle the click (and open the tab) before closing
+	setTimeout(function () {
+		window.close()
+	}, 0)
+}
+
+interface HistoryLinksProps {
+	productID: string | null
+	market: Market | undefined
+}
+
+function HistoryLinks(props: HistoryLinksProps) {
+	var camel = camelUrl(props.productID, props.market)
+	var keepa = keepaUrl(props.productID, props.market)
+	return (
+		<>
+		{camel !== null &&
+			<a
+				className="camel"
+				href={camel}
+				target="_blank"
+				rel="noreferrer"
+				onClick={closePopup}
+				title="Price history on camelcamelcamel"
+				aria-label="Price history on camelcamelcamel"
+			>🐪</a>}
+		{keepa !== null &&
+			<a
+				className="keepa"
+				href={keepa}
+				target="_blank"
+				rel="noreferrer"
+				onClick={closePopup}
+				title="Price history on Keepa"
+				aria-label="Price history on Keepa"
+			>K</a>}
+		</>
+	)
 }
 
 export default class PriceList extends Component<PriceListProps> {
@@ -83,8 +121,8 @@ export default class PriceList extends Component<PriceListProps> {
 
 		var showRanks = this.props.options.showRanks
 		var ranks = this.props.rank
-
 		const productID = this.props.productID
+
 		const prices = this.props.price.map(function(amz): PriceRow {
 			var market = getMarket(amz.country)
 			var currency = market === undefined ? REFERENCE_CURRENCY : market.currency
@@ -95,8 +133,6 @@ export default class PriceList extends Component<PriceListProps> {
 				nativePrice: formatPrice(amz.price),
 				referencePrice: formatPrice(amz.price * EUR_PER_UNIT[currency]),
 				note: market === undefined ? undefined : market.note,
-				camel: camelUrl(productID, market),
-				keepa: keepaUrl(productID, market),
 				rank: showRanks ? ranks[amz.country] : undefined
 			}
 		})
@@ -112,29 +148,12 @@ export default class PriceList extends Component<PriceListProps> {
 				<td className="country">{amz.country.toUpperCase()}{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}</td>
 				<td className="price">
 					{amz.currency !== REFERENCE_CURRENCY &&
-						<a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a>}
+						<a href={amz.url} target="_blank" rel="noreferrer" onClick={closePopup}>{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a>}
 				</td>
-				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
+				<td className="price"><a href={amz.url} target="_blank" rel="noreferrer" onClick={closePopup}>{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
 				{showRanks === true &&
 					<td className="rank">{amz.rank}</td>}
-				<td className="history">
-					{amz.camel !== null &&
-						<a
-							className="camel"
-							href={amz.camel}
-							target="_blank"
-							title="Price history on camelcamelcamel"
-							aria-label="Price history on camelcamelcamel"
-						>🐪</a>}
-					{amz.keepa !== null &&
-						<a
-							className="keepa"
-							href={amz.keepa}
-							target="_blank"
-							title="Price history on Keepa"
-							aria-label="Price history on Keepa"
-						>K</a>}
-				</td>
+				<td className="history"><HistoryLinks productID={productID} market={getMarket(amz.country)} /></td>
 					</tr>
 					)
 		})
@@ -151,7 +170,7 @@ export default class PriceList extends Component<PriceListProps> {
 					{reason === 'error' ? 'loading failed' : 'not found'}
 				</td>
 				{showRanks === true && <td className="rank" />}
-				<td className="history" />
+				<td className="history"><HistoryLinks productID={productID} market={getMarket(country)} /></td>
 					</tr>
 					)
 		})

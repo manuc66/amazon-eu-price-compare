@@ -12,6 +12,10 @@ export default class OptionsPageLink extends Component {
 		} else {
 			window.open(chrome.runtime.getURL('options.html'))
 		}
+		// the options tab is open, the popup has no reason to stay
+		setTimeout(function () {
+			window.close()
+		}, 0)
 	}
 
 	render() {

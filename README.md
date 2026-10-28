@@ -210,8 +210,11 @@ outside the store; only Linux can pre-install one through a preferences file.
 - Stores that could not be compared are listed instead of disappearing:
   "not found" when the store answers without a parsable price (or 404),
   "loading failed" when the store cannot be reached at all. The reason is kept
-  in the cache with the prices.
+  in the cache with the prices, and those rows keep their 🐪/K price history
+  links: it is the only way to check the price there when our own fetch failed.
 - A discreet ⟳ button below the table forces a refresh and bypasses the cache.
+- Every link opens its tab and closes the popup, instead of leaving the panel
+  open behind the new tab.
 - redux-logger is only added in development builds, so the shipped popup no
   longer logs every action.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
