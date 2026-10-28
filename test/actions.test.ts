@@ -16,13 +16,23 @@ function state(): RootState {
 	}
 }
 
-function stubChrome(url: string): void {
+function stubChrome(url: string, cached: Record<string, unknown> = {}): void {
+	const data: Record<string, unknown> = { ...cached }
+	const area = {
+		get: (key: string, callback: (items: Record<string, unknown>) => void) =>
+			callback(key in data ? { [key]: data[key] } : {}),
+		set: (items: Record<string, unknown>, callback: () => void) => {
+			Object.assign(data, items)
+			callback()
+		}
+	}
 	vi.stubGlobal('chrome', {
 		tabs: {
 			query: (_query: unknown, callback: (tabs: unknown[]) => void) => callback([{ id: 7, url }]),
 			sendMessage: (_tabId: number, _message: unknown, callback: (response: unknown) => void) =>
 				callback([12.34, '#1 in Electronics'])
 		},
+		storage: { session: area, local: area },
 		runtime: { lastError: undefined }
 	})
 }
@@ -31,8 +41,8 @@ function stubFetch(): void {
 	vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('<html></html>') })))
 }
 
-async function run(url: string): Promise<Action[]> {
-	stubChrome(url)
+async function run(url: string, cached: Record<string, unknown> = {}): Promise<Action[]> {
+	stubChrome(url, cached)
 	stubFetch()
 	const actions: Action[] = []
 	const dispatch = (action: unknown): void => {
@@ -71,6 +81,39 @@ describe('getCurrentPageUrl', () => {
 			price: 12.34,
 			productID: ASIN
 		})
+	})
+
+	it('reuses a fresh cache instead of fetching everything again', async () => {
+		const cached = {
+			[`prices:${ASIN}`]: {
+				savedAt: Date.now(),
+				price: [{ country: 'de', price: 42.5, current: true }],
+				rank: { de: '#1 in Electronics' }
+			}
+		}
+		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached)
+
+		expect(count(actions, 'REQUEST_STARTED')).toBe(0)
+		expect(actions).toContainEqual({
+			type: 'RESTORE_CACHED_PRICES',
+			price: [{ country: 'de', price: 42.5, current: true }],
+			rank: { de: '#1 in Electronics' },
+			productID: ASIN
+		})
+	})
+
+	it('shows a stale cache at once, then refreshes it', async () => {
+		const cached = {
+			[`prices:${ASIN}`]: {
+				savedAt: Date.now() - 5 * 60 * 1000,
+				price: [{ country: 'de', price: 42.5, current: true }],
+				rank: {}
+			}
+		}
+		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached)
+
+		expect(count(actions, 'RESTORE_CACHED_PRICES')).toBe(1)
+		expect(count(actions, 'REQUEST_STARTED')).toBeGreaterThan(0)
 	})
 
 	it('starts nothing when the page is not a product page', async () => {

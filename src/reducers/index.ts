@@ -2,6 +2,7 @@ import type { Reducer } from 'redux'
 import {
 	REQUEST_STARTED,
 	REQUEST_FINISHED,
+	RESTORE_CACHED_PRICES,
 	RECEIVE_CURRENT_PAGE_PRICE,
 	RECEIVE_COUNTRY_PRICE,
 	RECEIVE_COUNTRY_RANK,
@@ -13,6 +14,8 @@ import type { CountryPrice, CountryRanks, Options } from '../types'
 
 const price: Reducer<CountryPrice[], Action> = (state = [], action) => {
 	switch (action.type) {
+		case RESTORE_CACHED_PRICES:
+			return action.price
 		case RECEIVE_CURRENT_PAGE_PRICE:
 			return [...state.filter(obj => obj.country !== action.country), { country: action.country, price: action.price, current: true }]
 		case RECEIVE_COUNTRY_PRICE:
@@ -24,6 +27,8 @@ const price: Reducer<CountryPrice[], Action> = (state = [], action) => {
 
 const rank: Reducer<CountryRanks, Action> = (state = {}, action) => {
 	switch (action.type) {
+		case RESTORE_CACHED_PRICES:
+			return action.rank
 		case RECEIVE_COUNTRY_RANK:
 			return Object.assign({}, state, { [action.country]: action.rank })
 		default:
@@ -53,6 +58,7 @@ const pending: Reducer<number, Action> = (state = 0, action) => {
 
 const productID: Reducer<string | null, Action> = (state = null, action) => {
 	switch (action.type) {
+		case RESTORE_CACHED_PRICES:
 		case RECEIVE_CURRENT_PAGE_PRICE:
 			return action.productID
 		default:

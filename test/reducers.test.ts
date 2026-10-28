@@ -60,6 +60,19 @@ describe('rootReducer', () => {
 		expect(state.options).toEqual({ showRanks: true, enabledCountries: ['de'] })
 	})
 
+	it('restores a cached comparison', () => {
+		const state = rootReducer(undefined, {
+			type: 'RESTORE_CACHED_PRICES',
+			price: [{ country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' }],
+			rank: { fr: null },
+			productID: 'B08N5WRWNW'
+		})
+
+		expect(state.price).toEqual([{ country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' }])
+		expect(state.rank).toEqual({ fr: null })
+		expect(state.productID).toBe('B08N5WRWNW')
+	})
+
 	it('counts the in-flight requests', () => {
 		let state = rootReducer(undefined, { type: REQUEST_STARTED })
 		state = rootReducer(state, { type: REQUEST_STARTED })

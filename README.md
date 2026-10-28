@@ -160,6 +160,11 @@ separators.
 - Loading feedback: a spinner while the first prices arrive, then a thin
   progress bar above the table, and a fixed popup width so the panel no longer
   resizes while rows are added.
+- Cache the last comparison per ASIN (`chrome.storage.session`): reopening the
+  popup on the same product shows the previous table immediately, and no
+  request at all is made if it is less than two minutes old.
+- Table alignment: prices right aligned with tabular figures, and the price
+  history links in their own column on the right.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
   **amazon.ie** (EUR), for ten stores in total.
 - Replace the hardcoded country list, the per-country display branches and the

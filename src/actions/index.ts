@@ -1,12 +1,14 @@
 import * as amzUtil from "../util/AmazonUtils"
 import type { ThunkAction } from 'redux-thunk'
 import { DEFAULT_ENABLED_COUNTRIES, MARKETS, marketsToCompare } from '../markets'
+import { isFresh, readCachedPrices } from '../cache'
 import type { Market } from '../markets'
-import type { Options } from '../types'
+import type { CountryPrice, CountryRanks, Options } from '../types'
 import type { RootState } from '../reducers'
 
 export const REQUEST_STARTED = 'REQUEST_STARTED'
 export const REQUEST_FINISHED = 'REQUEST_FINISHED'
+export const RESTORE_CACHED_PRICES = 'RESTORE_CACHED_PRICES'
 export const RECEIVE_CURRENT_PAGE_PRICE = 'RECEIVE_CURRENT_PAGE_PRICE'
 export const RECEIVE_COUNTRY_PRICE = 'RECEIVE_COUNTRY_PRICE'
 export const RECEIVE_COUNTRY_RANK = 'RECEIVE_COUNTRY_RANK'
@@ -18,6 +20,13 @@ export interface RequestStartedAction {
 
 export interface RequestFinishedAction {
 	type: typeof REQUEST_FINISHED
+}
+
+export interface RestoreCachedPricesAction {
+	type: typeof RESTORE_CACHED_PRICES
+	price: CountryPrice[]
+	rank: CountryRanks
+	productID: string
 }
 
 export interface ReceiveCurrentPagePriceAction {
@@ -49,6 +58,7 @@ export interface ReceiveOptionsAction {
 export type Action =
 	| RequestStartedAction
 	| RequestFinishedAction
+	| RestoreCachedPricesAction
 	| ReceiveCurrentPagePriceAction
 	| ReceiveCountryPriceAction
 	| ReceiveCountryRankAction
@@ -74,6 +84,16 @@ export function requestStarted(): RequestStartedAction {
 
 export function requestFinished(): RequestFinishedAction {
 	return { type: REQUEST_FINISHED }
+}
+
+/** Shows the previous comparison of the same product while it is refreshed. */
+export function restoreCachedPrices(price: CountryPrice[], rank: CountryRanks, productID: string): RestoreCachedPricesAction {
+	return {
+		type: RESTORE_CACHED_PRICES,
+		price,
+		rank,
+		productID
+	}
 }
 
 export function receiveCurrentPagePrice(country: string, price: number, productID: string): ReceiveCurrentPagePriceAction {
@@ -110,41 +130,56 @@ export function receiveOptions(items: Options): ReceiveOptionsAction {
 }
 
 // async action
-export function getCurrentPageUrl(): AppThunk {
-	return (dispatch, getState) => {
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			var tab = tabs[0]
-			if (tab === undefined || tab.id === undefined || typeof tab.url !== 'string') {
+export function getCurrentPageUrl(): AppThunk<Promise<void>> {
+	return async (dispatch, getState) => {
+		const tab = await queryActiveTab()
+		if (tab === undefined || tab.id === undefined || typeof tab.url !== 'string') {
+			return
+		}
+
+		const country = amzUtil.getCountryFromAmazonProductPageUrl(tab.url)
+		const productID = amzUtil.getProductIDFromAmazonProductPageUrl(tab.url)
+		if (productID === null || country === null) {
+			return
+		}
+
+		// reopening the popup on the same product shows the last comparison at once
+		const cached = await readCachedPrices(productID)
+		if (cached !== null) {
+			dispatch(restoreCachedPrices(cached.price, cached.rank, productID))
+			if (isFresh(cached)) {
 				return
 			}
+		}
 
-			const country = amzUtil.getCountryFromAmazonProductPageUrl(tab.url)
-			const productID = amzUtil.getProductIDFromAmazonProductPageUrl(tab.url)
-			if (productID === null || country === null) {
+		dispatch(requestStarted())
+		chrome.tabs.sendMessage(tab.id, { "message": "get_current_page_info" }, function (response: PageInfoResponse | undefined) {
+			// reading lastError keeps chrome from logging "Could not establish connection"
+			void chrome.runtime.lastError
+			dispatch(requestFinished())
+
+			if (response === undefined || response[0] === null) {
 				return
 			}
-
-			dispatch(requestStarted())
-			chrome.tabs.sendMessage(tab.id, { "message": "get_current_page_info" }, function (response: PageInfoResponse | undefined) {
-				// reading lastError keeps chrome from logging "Could not establish connection"
-				void chrome.runtime.lastError
-				dispatch(requestFinished())
-
-				if (response === undefined || response[0] === null) {
-					return
-				}
-				dispatch(receiveCurrentPagePrice(country, response[0], productID))
-				if (response.length > 1) {
-					dispatch(receiveCountryRank(country, response[1]))
-				}
-			})
-
-			const markets = marketsToCompare(country, getState().options.enabledCountries)
-			for (const market of markets) {
-				dispatch(getCountryPrice(productID, market))
+			dispatch(receiveCurrentPagePrice(country, response[0], productID))
+			if (response.length > 1) {
+				dispatch(receiveCountryRank(country, response[1]))
 			}
 		})
+
+		const markets = marketsToCompare(country, getState().options.enabledCountries)
+		for (const market of markets) {
+			dispatch(getCountryPrice(productID, market))
+		}
 	}
+}
+
+function queryActiveTab(): Promise<chrome.tabs.Tab | undefined> {
+	return new Promise((resolve) => {
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			resolve(tabs[0])
+		})
+	})
 }
 
 // async action
