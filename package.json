@@ -4,9 +4,10 @@
   "description": "This extension compares price from amazon de, it, es, fr, nl, be and uk",
   "main": "content.js",
   "scripts": {
-    "build": "npm run build:chrome && npm run build:firefox",
+    "build": "npm run typecheck && npm run build:chrome && npm run build:firefox",
     "build:chrome": "node scripts/build.js chrome",
     "build:firefox": "node scripts/build.js firefox",
+    "typecheck": "tsc --noEmit",
     "lint:firefox": "npx --yes web-ext lint --source-dir dist/firefox",
     "zip": "npm run zip:chrome && npm run zip:firefox",
     "zip:chrome": "cd dist/chrome && zip -qr ../amazon-eu-price-compare-chrome.zip .",
@@ -26,6 +27,11 @@
     "@babel/core": "^8.0.9",
     "@babel/plugin-transform-react-jsx": "^8.0.1",
     "@babel/preset-env": "^8.0.7",
+    "@babel/preset-typescript": "^8.0.7",
+    "@types/chrome": "^0.3.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/redux-logger": "^3.0.13",
     "babel-loader": "^10.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -33,6 +39,7 @@
     "redux": "^5.0.1",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^3.1.0",
+    "typescript": "^7.0.2",
     "webpack": "^5.112.2",
     "webpack-cli": "^7.2.3"
   }

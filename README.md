@@ -57,9 +57,9 @@ See [FAQ](./faq.md). It's highly recommended that you have a look first.
 
 ## 6 DEV Info
 
-Chrome extension with react and redux.
+Chrome/Firefox extension written in TypeScript with React and Redux.
 
-npm, babel and webpack needed for building.
+npm, babel, webpack and the TypeScript compiler are needed for building.
 
 ### 6.1 Build
 
@@ -67,6 +67,10 @@ npm, babel and webpack needed for building.
 npm i
 npm run build
 ```
+
+`npm run build` runs `tsc --noEmit` first (Babel only strips the types, it does
+not check them), then builds both browsers. Use `npm run typecheck` to check the
+types on their own.
 
 ### 6.2 Build output
 
@@ -94,6 +98,8 @@ browsers (html, icons) live in `extension/`.
 
 ### Unreleased
 
+- Migrate the sources to TypeScript (`strict`, `chromium` typings through
+  `@types/chrome`), checked with `tsc --noEmit` before every build.
 - Firefox support: `manifests/manifest.firefox.json` adds the
   `browser_specific_settings.gecko` block (id, `strict_min_version` 140 and the
   `data_collection_permissions` required by AMO).

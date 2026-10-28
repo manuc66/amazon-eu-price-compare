@@ -1,8 +1,8 @@
-import React from 'react'
+import { Component } from 'react'
 import PriceListContainer from '../containers/PriceListContainer'
-import OptionsPageLink from '../components/OptionsPageLink'
+import OptionsPageLink from './OptionsPageLink'
 
-class App extends React.Component {
+export default class App extends Component {
 	render() {
 		return (
 			<div>
@@ -12,5 +12,3 @@ class App extends React.Component {
 		)
 	}
 }
-
-export default App
