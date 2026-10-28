@@ -7,6 +7,19 @@ export interface CountryPrice {
 	url?: string
 }
 
+/**
+ * Why a store did not produce a price:
+ * - `not-found`: the store answered, but the product is not sold there
+ * - `error`: the store could not be loaded at all (network, blocked, HTTP error)
+ */
+export type StoreOutcome = 'not-found' | 'error'
+
+/** Stores that could not be compared, with the reason, for one product. */
+export interface FailedPrices {
+	productID: string | null
+	outcomes: Record<string, StoreOutcome>
+}
+
 /** Best seller rank, keyed by country. */
 export type CountryRanks = Record<string, string | null>
 

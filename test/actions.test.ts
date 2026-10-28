@@ -12,7 +12,8 @@ function state(): RootState {
 		rank: {},
 		options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 		productID: null,
-		pending: 0
+		pending: 0,
+		failed: { productID: null, outcomes: {} }
 	}
 }
 
@@ -37,8 +38,12 @@ function stubChrome(url: string, cached: Record<string, unknown> = {}): void {
 	})
 }
 
-function stubFetch(): void {
-	vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('<html></html>') })))
+function stubFetch(response: { ok: boolean; status?: number; text?: () => Promise<Response> } = { ok: true }): void {
+	vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+		ok: response.ok,
+		status: response.status ?? 200,
+		text: () => Promise.resolve('<html></html>')
+	})))
 }
 
 async function run(url: string, cached: Record<string, unknown> = {}, force = false): Promise<Action[]> {
@@ -88,7 +93,8 @@ describe('getCurrentPageUrl', () => {
 			[`prices:${ASIN}`]: {
 				savedAt: Date.now(),
 				price: [{ country: 'de', price: 42.5, current: true }],
-				rank: { de: '#1 in Electronics' }
+				rank: { de: '#1 in Electronics' },
+				outcomes: {}
 			}
 		}
 		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached)
@@ -98,7 +104,8 @@ describe('getCurrentPageUrl', () => {
 			type: 'RESTORE_CACHED_PRICES',
 			price: [{ country: 'de', price: 42.5, current: true }],
 			rank: { de: '#1 in Electronics' },
-			productID: ASIN
+			productID: ASIN,
+			outcomes: {}
 		})
 	})
 
@@ -107,7 +114,8 @@ describe('getCurrentPageUrl', () => {
 			[`prices:${ASIN}`]: {
 				savedAt: Date.now(),
 				price: [{ country: 'de', price: 42.5, current: true }],
-				rank: {}
+				rank: {},
+				outcomes: {}
 			}
 		}
 		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached, true)
@@ -121,13 +129,40 @@ describe('getCurrentPageUrl', () => {
 			[`prices:${ASIN}`]: {
 				savedAt: Date.now() - 5 * 60 * 1000,
 				price: [{ country: 'de', price: 42.5, current: true }],
-				rank: {}
+				rank: {},
+				outcomes: {}
 			}
 		}
 		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached)
 
 		expect(count(actions, 'RESTORE_CACHED_PRICES')).toBe(1)
 		expect(count(actions, 'REQUEST_STARTED')).toBeGreaterThan(0)
+	})
+
+	it('reports every store without a parsable price as not found', async () => {
+		const actions = await run(`https://www.amazon.de/dp/${ASIN}`)
+		const notFound = actions.filter((a) => a.type === 'COUNTRY_UNAVAILABLE' && a.reason === 'not-found')
+
+		expect(notFound).toHaveLength(marketsToCompare('de', DEFAULT_ENABLED_COUNTRIES).length)
+		expect(notFound).toContainEqual({ type: 'COUNTRY_UNAVAILABLE', country: 'nl', reason: 'not-found' })
+	})
+
+	it('reports a store that cannot be loaded as an error', async () => {
+		stubChrome(`https://www.amazon.de/dp/${ASIN}`)
+		vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('network down'))))
+		const actions: Action[] = []
+		const dispatch = (action: unknown): void => {
+			if (typeof action === 'function') {
+				(action as (d: typeof dispatch, g: typeof state) => void)(dispatch, state)
+				return
+			}
+			actions.push(action as Action)
+		}
+		getCurrentPageUrl(false)(dispatch, state, undefined)
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		const errors = actions.filter((a) => a.type === 'COUNTRY_UNAVAILABLE' && a.reason === 'error')
+		expect(errors).toHaveLength(marketsToCompare('de', DEFAULT_ENABLED_COUNTRIES).length)
 	})
 
 	it('starts nothing when the page is not a product page', async () => {

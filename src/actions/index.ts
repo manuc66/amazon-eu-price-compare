@@ -3,11 +3,12 @@ import type { ThunkAction } from 'redux-thunk'
 import { DEFAULT_ENABLED_COUNTRIES, MARKETS, marketsToCompare } from '../markets'
 import { isFresh, readCachedPrices } from '../cache'
 import type { Market } from '../markets'
-import type { CountryPrice, CountryRanks, Options } from '../types'
+import type { CountryPrice, CountryRanks, Options, StoreOutcome } from '../types'
 import type { RootState } from '../reducers'
 
 export const REQUEST_STARTED = 'REQUEST_STARTED'
 export const REQUEST_FINISHED = 'REQUEST_FINISHED'
+export const COUNTRY_UNAVAILABLE = 'COUNTRY_UNAVAILABLE'
 export const RESTORE_CACHED_PRICES = 'RESTORE_CACHED_PRICES'
 export const RECEIVE_CURRENT_PAGE_PRICE = 'RECEIVE_CURRENT_PAGE_PRICE'
 export const RECEIVE_COUNTRY_PRICE = 'RECEIVE_COUNTRY_PRICE'
@@ -22,11 +23,18 @@ export interface RequestFinishedAction {
 	type: typeof REQUEST_FINISHED
 }
 
+export interface CountryUnavailableAction {
+	type: typeof COUNTRY_UNAVAILABLE
+	country: string
+	reason: StoreOutcome
+}
+
 export interface RestoreCachedPricesAction {
 	type: typeof RESTORE_CACHED_PRICES
 	price: CountryPrice[]
 	rank: CountryRanks
 	productID: string
+	outcomes: Record<string, StoreOutcome>
 }
 
 export interface ReceiveCurrentPagePriceAction {
@@ -58,6 +66,7 @@ export interface ReceiveOptionsAction {
 export type Action =
 	| RequestStartedAction
 	| RequestFinishedAction
+	| CountryUnavailableAction
 	| RestoreCachedPricesAction
 	| ReceiveCurrentPagePriceAction
 	| ReceiveCountryPriceAction
@@ -86,13 +95,28 @@ export function requestFinished(): RequestFinishedAction {
 	return { type: REQUEST_FINISHED }
 }
 
+/** The store answered without a price, or could not be loaded at all. */
+export function countryUnavailable(country: string, reason: StoreOutcome): CountryUnavailableAction {
+	return {
+		type: COUNTRY_UNAVAILABLE,
+		country,
+		reason
+	}
+}
+
 /** Shows the previous comparison of the same product while it is refreshed. */
-export function restoreCachedPrices(price: CountryPrice[], rank: CountryRanks, productID: string): RestoreCachedPricesAction {
+export function restoreCachedPrices(
+	price: CountryPrice[],
+	rank: CountryRanks,
+	productID: string,
+	outcomes: Record<string, StoreOutcome>
+): RestoreCachedPricesAction {
 	return {
 		type: RESTORE_CACHED_PRICES,
 		price,
 		rank,
-		productID
+		productID,
+		outcomes
 	}
 }
 
@@ -147,7 +171,7 @@ export function getCurrentPageUrl(force = false): AppThunk<Promise<void>> {
 		// reopening the popup on the same product shows the last comparison at once
 		const cached = force ? null : await readCachedPrices(productID)
 		if (cached !== null) {
-			dispatch(restoreCachedPrices(cached.price, cached.rank, productID))
+			dispatch(restoreCachedPrices(cached.price, cached.rank, productID, cached.outcomes))
 			if (isFresh(cached)) {
 				return
 			}
@@ -215,6 +239,7 @@ export function getCountryPrice(productID: string, market: Market): AppThunk {
 			.then((response) => {
 				if (!response.ok) {
 					console.log(`Cannot find this item from amazon ${market.country}.`)
+					dispatch(countryUnavailable(market.country, response.status === 404 ? 'not-found' : 'error'))
 					return
 				}
 				return response.text().then(function (html) {
@@ -223,6 +248,7 @@ export function getCountryPrice(productID: string, market: Market): AppThunk {
 					var price = amzUtil.getPriceFromAmazonProductDetailPage(doc)
 					var rank = amzUtil.getRank(doc)
 					if (price === null) {
+						dispatch(countryUnavailable(market.country, 'not-found'))
 						return
 					}
 					dispatch(receiveCountryPrice(market.country, price, url))
@@ -232,6 +258,7 @@ export function getCountryPrice(productID: string, market: Market): AppThunk {
 			.catch(function (err: unknown) {
 				var message = err instanceof Error ? err.message : String(err)
 				console.log('There has been a problem with fetching price for other amazon markets: ' + message)
+				dispatch(countryUnavailable(market.country, 'error'))
 			})
 			.finally(function () {
 				dispatch(requestFinished())

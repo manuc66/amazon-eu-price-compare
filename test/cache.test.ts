@@ -40,31 +40,32 @@ describe('price cache', () => {
 	})
 
 	it('gives back what was written', async () => {
-		await writeCachedPrices(ASIN, PRICES, RANKS)
+		await writeCachedPrices(ASIN, PRICES, RANKS, { nl: 'not-found' })
 		const entry = await readCachedPrices(ASIN)
 		expect(entry?.price).toEqual(PRICES)
 		expect(entry?.rank).toEqual(RANKS)
+		expect(entry?.outcomes).toEqual({ nl: 'not-found' })
 	})
 
 	it('keeps the entries of different products apart', async () => {
-		await writeCachedPrices(ASIN, PRICES, RANKS)
+		await writeCachedPrices(ASIN, PRICES, RANKS, { nl: 'not-found' })
 		expect(await readCachedPrices('B000000000')).toBeNull()
 	})
 
 	it('ignores an entry older than ten minutes', async () => {
-		await writeCachedPrices(ASIN, PRICES, RANKS)
+		await writeCachedPrices(ASIN, PRICES, RANKS, { nl: 'not-found' })
 		vi.setSystemTime(new Date('2026-10-28T12:11:00Z'))
 		expect(await readCachedPrices(ASIN)).toBeNull()
 	})
 
 	it('still serves an entry older than ten minutes ago but inside the window', async () => {
-		await writeCachedPrices(ASIN, PRICES, RANKS)
+		await writeCachedPrices(ASIN, PRICES, RANKS, { nl: 'not-found' })
 		vi.setSystemTime(new Date('2026-10-28T12:05:00Z'))
 		expect(await readCachedPrices(ASIN)).not.toBeNull()
 	})
 
 	it('considers an entry fresh for two minutes, then stale', async () => {
-		await writeCachedPrices(ASIN, PRICES, RANKS)
+		await writeCachedPrices(ASIN, PRICES, RANKS, { nl: 'not-found' })
 		const entry = await readCachedPrices(ASIN)
 		expect(entry).not.toBeNull()
 		expect(isFresh(entry!)).toBe(true)
@@ -75,11 +76,11 @@ describe('price cache', () => {
 
 	it('saves once every request has settled', async () => {
 		vi.useFakeTimers()
-		persistPricesWhenIdle({ productID: ASIN, price: PRICES, rank: RANKS, pending: 3 })
+		persistPricesWhenIdle({ productID: ASIN, price: PRICES, rank: RANKS, pending: 3, failed: { outcomes: {} } })
 		vi.advanceTimersByTime(500)
 		expect(await readCachedPrices(ASIN)).toBeNull()
 
-		persistPricesWhenIdle({ productID: ASIN, price: PRICES, rank: RANKS, pending: 0 })
+		persistPricesWhenIdle({ productID: ASIN, price: PRICES, rank: RANKS, pending: 0, failed: { outcomes: {} } })
 		vi.advanceTimersByTime(500)
 		await Promise.resolve()
 		expect(await readCachedPrices(ASIN)).not.toBeNull()
@@ -87,8 +88,8 @@ describe('price cache', () => {
 
 	it('does not save when there is nothing to show', () => {
 		const data = stubStorage()
-		persistPricesWhenIdle({ productID: null, price: PRICES, rank: RANKS, pending: 0 })
-		persistPricesWhenIdle({ productID: ASIN, price: [], rank: {}, pending: 0 })
+		persistPricesWhenIdle({ productID: null, price: PRICES, rank: RANKS, pending: 0, failed: { outcomes: {} } })
+		persistPricesWhenIdle({ productID: ASIN, price: [], rank: {}, pending: 0, failed: { outcomes: {} } })
 		vi.advanceTimersByTime(500)
 		expect(Object.keys(data)).toEqual([])
 	})

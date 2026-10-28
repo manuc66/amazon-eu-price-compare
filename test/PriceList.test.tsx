@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import PriceList from '../src/components/PriceList'
-import type { CountryPrice, CountryRanks, Options } from '../src/types'
+import type { CountryPrice, CountryRanks, Options, StoreOutcome } from '../src/types'
 
 const ASIN = 'B08N5WRWNW'
 
@@ -10,7 +10,8 @@ function render(
 	rank: CountryRanks = {},
 	options: Options = { showRanks: false, enabledCountries: ['uk','de','fr','it','es','nl','se','pl','be','ie','us'] },
 	productID: string | null = ASIN,
-	loading = false
+	loading = false,
+	failed: Record<string, StoreOutcome> = {}
 ): string {
 	return renderToStaticMarkup(
 		<PriceList
@@ -19,6 +20,7 @@ function render(
 			options={options}
 			productID={productID}
 			loading={loading}
+			failed={failed}
 			getOptions={() => {}}
 			getCurrentPageUrl={() => {}}
 			refresh={() => {}}
@@ -27,12 +29,12 @@ function render(
 }
 
 /** Splits the rendered table into one string per store row. */
-function rows(html: string): string[] {
-	return html.split('<tr>').slice(1)
+function rowsOf(html: string): string[] {
+	return html.split(/<tr[^>]*>/).slice(1)
 }
 
 function rowOf(html: string, country: string): string {
-	const row = rows(html).find((r) => r.includes(`>${country.toUpperCase()}<`))
+	const row = rowsOf(html).find((r) => r.includes(`>${country.toUpperCase()}<`))
 	if (row === undefined) {
 		throw new Error(`no row for ${country}`)
 	}
@@ -65,7 +67,7 @@ describe('PriceList', () => {
 		const html = render([{ country: 'de', price: 42.5, url: 'https://www.amazon.de/dp/B08N5WRWNW/' }])
 		const row = rowOf(html, 'de')
 		expect(row).toContain('€ 42.50')
-		expect(row.match(/class="price"/g)).toHaveLength(1)
+		expect(row.match(/€/g)).toHaveLength(1)
 	})
 
 	it('shows the native price and the euro equivalent for a british store', () => {
@@ -89,7 +91,7 @@ describe('PriceList', () => {
 	it('treats the irish store as a euro store', () => {
 		const row = rowOf(render([{ country: 'ie', price: 20 }]), 'ie')
 		expect(row).toContain('€ 20.00')
-		expect(row.match(/class="price"/g)).toHaveLength(1)
+		expect(row.match(/€/g)).toHaveLength(1)
 	})
 
 	it('sorts the stores by converted price, not by native price', () => {
@@ -98,7 +100,7 @@ describe('PriceList', () => {
 			{ country: 'uk', price: 10 },   // 11.70 EUR
 			{ country: 'de', price: 20 }    // 20.00 EUR
 		])
-		expect(rows(html).map((r) => r.match(/>([A-Z]{2})</)?.[1])).toEqual(['UK', 'DE', 'PL'])
+		expect(rowsOf(html).map((r) => r.match(/>([A-Z]{2})</)?.[1])).toEqual(['UK', 'DE', 'PL'])
 	})
 
 	it('marks the US price as excluding VAT and shipping', () => {
@@ -154,6 +156,28 @@ describe('PriceList', () => {
 		expect(render([{ country: 'de', price: 20 }])).toContain('title="Refresh prices"')
 		expect(render([])).toContain('title="Refresh prices"')
 		expect(render([], {}, { showRanks: false, enabledCountries: [] }, ASIN, true)).toContain('title="Refresh prices"')
+	})
+
+	it('lists the stores where nothing was found, after the prices', () => {
+		const html = render([{ country: 'de', price: 20 }], {}, undefined, ASIN, false, { nl: 'not-found', se: 'not-found' })
+		const rows = rowsOf(html)
+
+		expect(rows).toHaveLength(3)
+		expect(rows[1]).toContain('NL')
+		expect(rows[1]).toContain('not found')
+		expect(rows[2]).toContain('SE')
+	})
+
+	it('distinguishes a store that could not be loaded', () => {
+		const row = rowOf(render([{ country: 'de', price: 20 }], {}, undefined, ASIN, false, { pl: 'error' }), 'PL')
+		expect(row).toContain('loading failed')
+		expect(row).not.toContain('not found')
+	})
+
+	it('builds no history link on a failed row', () => {
+		const row = rowOf(render([{ country: 'uk', price: 10 }], {}, undefined, ASIN, false, { de: 'not-found' }), 'DE')
+		expect(row).not.toContain('camelcamelcamel')
+		expect(row).not.toContain('keepa.com')
 	})
 
 	it('adds the rank column only when the option is enabled', () => {

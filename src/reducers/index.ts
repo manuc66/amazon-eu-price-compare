@@ -1,5 +1,6 @@
 import type { Reducer } from 'redux'
 import {
+	COUNTRY_UNAVAILABLE,
 	REQUEST_STARTED,
 	REQUEST_FINISHED,
 	RESTORE_CACHED_PRICES,
@@ -10,7 +11,7 @@ import {
 } from '../actions'
 import type { Action } from '../actions'
 import { DEFAULT_ENABLED_COUNTRIES } from '../markets'
-import type { CountryPrice, CountryRanks, Options } from '../types'
+import type { CountryPrice, CountryRanks, FailedPrices, Options } from '../types'
 
 const price: Reducer<CountryPrice[], Action> = (state = [], action) => {
 	switch (action.type) {
@@ -66,6 +67,23 @@ const productID: Reducer<string | null, Action> = (state = null, action) => {
 	}
 }
 
+const failed: Reducer<FailedPrices, Action> = (state = { productID: null, outcomes: {} }, action) => {
+	switch (action.type) {
+		case RESTORE_CACHED_PRICES:
+			return { productID: action.productID, outcomes: action.outcomes }
+		case RECEIVE_CURRENT_PAGE_PRICE:
+			// another product: the list of failed stores starts over
+			return state.productID === action.productID ? state : { productID: action.productID, outcomes: {} }
+		case COUNTRY_UNAVAILABLE:
+			if (state.outcomes[action.country] === action.reason) {
+				return state
+			}
+			return { productID: state.productID, outcomes: { ...state.outcomes, [action.country]: action.reason } }
+		default:
+			return state
+	}
+}
+
 /** Shape of the redux store. */
 export interface AppState {
 	price: CountryPrice[]
@@ -75,6 +93,8 @@ export interface AppState {
 	productID: string | null
 	/** number of in-flight requests */
 	pending: number
+	/** stores that could not be compared, with the reason */
+	failed: FailedPrices
 }
 
 const initialState: AppState = {
@@ -82,7 +102,8 @@ const initialState: AppState = {
 	rank: {},
 	options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 	productID: null,
-	pending: 0
+	pending: 0,
+	failed: { productID: null, outcomes: {} }
 }
 
 // written out instead of combineReducers(): with the redux 5 typings the inferred
@@ -96,13 +117,15 @@ const rootReducer: Reducer<AppState, Action> = (state = initialState, action) =>
 	const nextOptions = options(state.options, action)
 	const nextProductID = productID(state.productID, action)
 	const nextPending = pending(state.pending, action)
+	const nextFailed = failed(state.failed, action)
 
 	if (
 		nextPrice === state.price &&
 		nextRank === state.rank &&
 		nextOptions === state.options &&
 		nextProductID === state.productID &&
-		nextPending === state.pending
+		nextPending === state.pending &&
+		nextFailed === state.failed
 	) {
 		return state
 	}
@@ -112,7 +135,8 @@ const rootReducer: Reducer<AppState, Action> = (state = initialState, action) =>
 		rank: nextRank,
 		options: nextOptions,
 		productID: nextProductID,
-		pending: nextPending
+		pending: nextPending,
+		failed: nextFailed
 	}
 }
 

@@ -207,6 +207,10 @@ outside the store; only Linux can pre-install one through a preferences file.
 - Table alignment: prices right aligned with tabular figures, and the price
   history links in their own column on the right. `overflow: hidden` is gone
   from the cells: it was shrinking that last column to nothing.
+- Stores that could not be compared are listed instead of disappearing:
+  "not found" when the store answers without a parsable price (or 404),
+  "loading failed" when the store cannot be reached at all. The reason is kept
+  in the cache with the prices.
 - A discreet ⟳ button below the table forces a refresh and bypasses the cache.
 - redux-logger is only added in development builds, so the shipped popup no
   longer logs every action.

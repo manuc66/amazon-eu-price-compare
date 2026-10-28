@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, camelUrl, getMarket, keepaUrl } from '../markets'
 import type { Currency } from '../markets'
-import type { CountryPrice, CountryRanks, Options } from '../types'
+import type { CountryPrice, CountryRanks, Options, StoreOutcome } from '../types'
 
 export interface PriceListProps {
 	price: CountryPrice[]
@@ -11,6 +11,8 @@ export interface PriceListProps {
 	productID: string | null
 	/** true while prices are still being fetched */
 	loading: boolean
+	/** stores that could not be compared, with the reason */
+	failed: Record<string, StoreOutcome>
 	getOptions: () => void
 	getCurrentPageUrl: () => void
 	/** ignores the cache and fetches every store again */
@@ -108,8 +110,10 @@ export default class PriceList extends Component<PriceListProps> {
 				<tr key={amz.country}>
 				<td className="amazon">Amazon</td>
 				<td className="country">{amz.country.toUpperCase()}{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}</td>
-				{amz.currency !== REFERENCE_CURRENCY &&
-					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a></td>}
+				<td className="price">
+					{amz.currency !== REFERENCE_CURRENCY &&
+						<a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a>}
+				</td>
 				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
 				{showRanks === true &&
 					<td className="rank">{amz.rank}</td>}
@@ -135,12 +139,30 @@ export default class PriceList extends Component<PriceListProps> {
 					)
 		})
 
+		const failed = this.props.failed
+		const failed_list = Object.keys(failed).sort().map(function(country) {
+			var reason = failed[country]
+			return (
+				<tr key={'failed-' + country} className="failed">
+				<td className="amazon">Amazon</td>
+				<td className="country">{country.toUpperCase()}</td>
+				<td className="price" />
+				<td className={'price ' + (reason === 'error' ? 'load-error' : 'not-found')}>
+					{reason === 'error' ? 'loading failed' : 'not found'}
+				</td>
+				{showRanks === true && <td className="rank" />}
+				<td className="history" />
+					</tr>
+					)
+		})
+
 		return (
 			<>
 			{this.props.loading && <div className="progress"><div className="progress-bar" /></div>}
 			<table className="pricelist">
 			<tbody>
 			{price_list}
+			{failed_list}
 			</tbody>
 			</table>
 			{toolbar}

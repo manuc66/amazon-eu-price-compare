@@ -1,4 +1,4 @@
-import type { CountryPrice, CountryRanks } from './types'
+import type { CountryPrice, CountryRanks, StoreOutcome } from './types'
 
 /**
  * Prices are cached per ASIN so that reopening the popup shows the previous
@@ -8,6 +8,7 @@ export interface CachedPrices {
 	savedAt: number
 	price: CountryPrice[]
 	rank: CountryRanks
+	outcomes: Record<string, StoreOutcome>
 }
 
 /** Older entries are not even displayed: the popup starts from a spinner. */
@@ -33,19 +34,26 @@ export function readCachedPrices(productID: string): Promise<CachedPrices | null
 				entry === undefined ||
 				typeof entry.savedAt !== 'number' ||
 				!Array.isArray(entry.price) ||
+				entry.outcomes === null ||
+				typeof entry.outcomes !== 'object' ||
 				Date.now() - entry.savedAt > MAX_AGE_MS
 			) {
 				resolve(null)
 				return
 			}
-			resolve(entry)
+			resolve({ savedAt: entry.savedAt, price: entry.price, rank: entry.rank, outcomes: entry.outcomes })
 		})
 	})
 }
 
-export function writeCachedPrices(productID: string, price: CountryPrice[], rank: CountryRanks): Promise<void> {
+export function writeCachedPrices(
+	productID: string,
+	price: CountryPrice[],
+	rank: CountryRanks,
+	outcomes: Record<string, StoreOutcome>
+): Promise<void> {
 	return new Promise((resolve) => {
-		var entry: CachedPrices = { savedAt: Date.now(), price, rank }
+		var entry: CachedPrices = { savedAt: Date.now(), price, rank, outcomes }
 		area().set({ [key(productID)]: entry }, function () {
 			// reading lastError keeps chrome from logging a quota error: a cache
 			// that cannot be written is not worth breaking the popup for
@@ -62,7 +70,13 @@ export function isFresh(entry: CachedPrices): boolean {
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 
 /** Saves the last comparison once every request has settled. */
-export function persistPricesWhenIdle(state: { productID: string | null; price: CountryPrice[]; rank: CountryRanks; pending: number }): void {
+export function persistPricesWhenIdle(state: {
+	productID: string | null
+	price: CountryPrice[]
+	rank: CountryRanks
+	pending: number
+	failed: { outcomes: Record<string, StoreOutcome> }
+}): void {
 	if (state.pending > 0 || state.productID === null || state.price.length === 0) {
 		return
 	}
@@ -72,8 +86,9 @@ export function persistPricesWhenIdle(state: { productID: string | null; price: 
 	var productID = state.productID
 	var price = state.price
 	var rank = state.rank
+	var outcomes = state.failed.outcomes
 	saveTimer = setTimeout(function () {
 		saveTimer = undefined
-		void writeCachedPrices(productID, price, rank)
+		void writeCachedPrices(productID, price, rank, outcomes)
 	}, 200)
 }

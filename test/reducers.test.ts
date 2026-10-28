@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import rootReducer from '../src/reducers'
 import {
+	COUNTRY_UNAVAILABLE,
 	REQUEST_FINISHED,
 	REQUEST_STARTED,
 	RECEIVE_COUNTRY_PRICE,
@@ -20,7 +21,8 @@ describe('rootReducer', () => {
 			rank: {},
 			options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 			productID: null,
-			pending: 0
+			pending: 0,
+			failed: { productID: null, outcomes: {} }
 		})
 	})
 
@@ -33,6 +35,24 @@ describe('rootReducer', () => {
 		})
 		expect(state.price).toEqual([{ country: 'de', price: 42.5, current: true }])
 		expect(state.productID).toBe('B08N5WRWNW')
+	})
+
+	it('records why a store could not be compared, once', () => {
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B08N5WRWNW' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'pl', reason: 'error' })
+
+		expect(state.failed.outcomes).toEqual({ nl: 'not-found', pl: 'error' })
+	})
+
+	it('forgets the failed stores when another product is loaded', () => {
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B000000001' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		expect(state.failed.outcomes).toEqual({ nl: 'not-found' })
+
+		state = rootReducer(state, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 10, productID: 'B000000002' })
+		expect(state.failed.outcomes).toEqual({})
 	})
 
 	it('replaces the previous price of the same store instead of duplicating it', () => {
@@ -65,12 +85,32 @@ describe('rootReducer', () => {
 			type: 'RESTORE_CACHED_PRICES',
 			price: [{ country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' }],
 			rank: { fr: null },
-			productID: 'B08N5WRWNW'
+			productID: 'B08N5WRWNW',
+			outcomes: { nl: 'not-found' }
 		})
 
 		expect(state.price).toEqual([{ country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' }])
 		expect(state.rank).toEqual({ fr: null })
 		expect(state.productID).toBe('B08N5WRWNW')
+		expect(state.failed).toEqual({ productID: 'B08N5WRWNW', outcomes: { nl: 'not-found' } })
+	})
+
+	it('records why a store could not be compared, once', () => {
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B08N5WRWNW' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'pl', reason: 'error' })
+
+		expect(state.failed.outcomes).toEqual({ nl: 'not-found', pl: 'error' })
+	})
+
+	it('forgets the failed stores when another product is loaded', () => {
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B000000001' })
+		state = rootReducer(state, { type: COUNTRY_UNAVAILABLE, country: 'nl', reason: 'not-found' })
+		expect(state.failed.outcomes).toEqual({ nl: 'not-found' })
+
+		state = rootReducer(state, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 10, productID: 'B000000002' })
+		expect(state.failed.outcomes).toEqual({})
 	})
 
 	it('counts the in-flight requests', () => {
