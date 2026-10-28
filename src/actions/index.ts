@@ -230,9 +230,11 @@ export function getCountryPrice(productID: string, market: Market): AppThunk {
 			url,
 			{
 				method: 'GET',
+				// the extension is privileged: no cookies, no referrer
+				credentials: 'omit',
+				referrerPolicy: 'no-referrer',
 				headers: {
-					'Accept': 'application/json',
-					'Content-Type': 'application/json',
+					'Accept': 'text/html'
 				}
 			}
 		)

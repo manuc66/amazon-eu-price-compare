@@ -189,7 +189,40 @@ folder. It survives restarts, but the developer-mode warning stays and the
 folder must not be moved or deleted. Windows and macOS refuse `.crx` files from
 outside the store; only Linux can pre-install one through a preferences file.
 
-## 7 Changelog
+## 7 Security and privacy
+
+What the extension asks for, and what it does with it.
+
+- **Permissions.** `activeTab` (read the url of the page the user asked about)
+  and `storage` (the two options and the price cache). Host permissions cover
+  the eleven Amazon storefronts and nothing else: a test fails if a manifest
+  asks for a host the market table does not contain.
+- **No remote code, no eval.** The bundle is built from this repository. Adding
+  eval or the `Function` constructor fails `npm run lint:bundle`, which runs in
+  `npm run release`.
+- **No third-party service, no telemetry, no analytics.** Prices are read from
+  the Amazon pages themselves; exchange rates are constants in
+  `src/markets.ts`.
+- **The user's Amazon session is never used.** Store pages are fetched with
+  `credentials: 'omit'` and `referrerPolicy: 'no-referrer'`, so the request
+  carries neither cookies nor a referrer: the extension cannot see a logged-in
+  price, and Amazon cannot tie the request to the browsing session.
+- **Stored data.** `chrome.storage.sync` keeps `showRanks` and the list of
+  compared stores. The last comparison of a product is kept per ASIN in
+  `chrome.storage.session` (memory only, cleared when the browser exits, ten
+  minutes maximum age) so reopening the popup does not refetch everything.
+  Nothing is sent anywhere else.
+- **Rendering.** Prices and ranks come from the page and are rendered as React
+  text nodes, never as HTML; there is no `dangerouslySetInnerHTML`, and the
+  links are built from a 10 character ASIN.
+- **Accepted warnings.** `web-ext lint` reports two `UNSAFE_VAR_ASSIGNMENT`
+  (innerHTML) warnings: they come from React DOM internals, not from this code.
+- **Known limitation.** Ten page requests are made each time a product is
+  opened for the first time (served from the cache for two minutes). That is
+  ordinary browsing traffic, but it is still automated access to Amazon: if
+  Amazon starts rate limiting, the popup will show `loading failed` rows.
+
+## 8 Changelog
 
 
 ### Unreleased
@@ -221,6 +254,12 @@ outside the store; only Linux can pre-install one through a preferences file.
 - Table alignment: prices right aligned with tabular figures, and the price
   history links in their own column on the right. `overflow: hidden` is gone
   from the cells: it was shrinking that last column to nothing.
+- Security review fixes: drop the `https://ajax.googleapis.com/` host permission
+  the extension no longer used (currency rates are constants), fetch the store
+  pages with `credentials: 'omit'` and `referrerPolicy: 'no-referrer'`, and pin
+  the version of the tooling run through `npx` (unpinned `npx --yes web-ext`
+  ran whatever was latest that day). `npm run lint:bundle` guards the first two
+  properties; `test/security.test.ts` the permissions and the pins.
 - Stores that could not be compared are listed instead of disappearing:
   "not found" when the store answers without a parsable price (or 404),
   "loading failed" when the store cannot be reached at all. The reason is kept

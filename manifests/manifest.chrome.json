@@ -27,8 +27,7 @@
     "*://www.amazon.pl/*",
     "*://www.amazon.com.be/*",
     "*://www.amazon.ie/*",
-    "*://www.amazon.com/*",
-    "https://ajax.googleapis.com/"
+    "*://www.amazon.com/*"
   ],
   "options_ui": {
     "page": "options.html"

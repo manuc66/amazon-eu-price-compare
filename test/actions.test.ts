@@ -38,12 +38,14 @@ function stubChrome(url: string, cached: Record<string, unknown> = {}): void {
 	})
 }
 
-function stubFetch(response: { ok: boolean; status?: number; text?: () => Promise<Response> } = { ok: true }): void {
-	vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
-		ok: response.ok,
-		status: response.status ?? 200,
+function stubFetch(): ReturnType<typeof vi.fn> {
+	const fetchMock = vi.fn(() => Promise.resolve({
+		ok: true,
+		status: 200,
 		text: () => Promise.resolve('<html></html>')
-	})))
+	}))
+	vi.stubGlobal('fetch', fetchMock)
+	return fetchMock
 }
 
 async function run(url: string, cached: Record<string, unknown> = {}, force = false): Promise<Action[]> {
@@ -137,6 +139,31 @@ describe('getCurrentPageUrl', () => {
 
 		expect(count(actions, 'RESTORE_CACHED_PRICES')).toBe(1)
 		expect(count(actions, 'REQUEST_STARTED')).toBeGreaterThan(0)
+	})
+
+	it('fetches the marketplace pages without credentials nor referrer', async () => {
+		const actions: Action[] = []
+		const dispatch = (action: unknown): void => {
+			if (typeof action === 'function') {
+				(action as (d: typeof dispatch, g: typeof state) => void)(dispatch, state)
+				return
+			}
+			actions.push(action as Action)
+		}
+		stubChrome(`https://www.amazon.de/dp/${ASIN}`)
+		const fetchMock = stubFetch()
+
+		getCurrentPageUrl(false)(dispatch, state, undefined)
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		// the extension is privileged: it must not send the user's amazon cookies
+		expect(fetchMock).toHaveBeenCalledWith(
+			expect.stringContaining('amazon.fr'),
+			expect.objectContaining({
+				credentials: 'omit',
+				referrerPolicy: 'no-referrer'
+			})
+		)
 	})
 
 	it('reports every store without a parsable price as not found', async () => {
