@@ -54,11 +54,20 @@ Well, now you are saved. Install this plugin, just a single click, and you get t
 
 > For CD/books/DVD categories, some products have multiple format, like a movie can have multiple formats like DVD, blue-ray, etc; for some products can't parse price correctly.
 
-## 4 Disclaimer
+## 4 Credits and License
 
-I worked at AWS professionally from Dec 1st 2020 to mid-June 2021.
+The original program was written by **Tiexin Guo** (2017–2024) and is licensed
+under the GNU General Public License, version 3. The licence text is kept
+verbatim in [LICENSE](./LICENSE).
 
-Everything I said in that period about this plugin and this repo is only my personal idea, and does not represents Amazon/AWS's opinion, and the develolpment done in that period about this plugin is completely done in my spare time outside office hours.
+That licence is not a formality: it is what gives everyone — this fork
+included — the right to reuse, modify and redistribute the code, and it has to
+stay attached to every copy. The GPL also asks modified versions to say that
+they were modified and when; the changelog in section 7 does exactly that.
+
+This fork keeps the same licence, GPL-3.0, and the same copyright notice. It is
+not affiliated with, endorsed by or supported by Amazon, nor by the original
+author.
 
 ## 5 FAQ
 
@@ -184,6 +193,11 @@ outside the store; only Linux can pre-install one through a preferences file.
 
 
 ### Unreleased
+
+- Move the sources to Codeberg (`https://codeberg.org/manuc66/amazon-eu-price-compare`).
+- Replace the personal note in the README with a credits/licence section, and
+  fix `package.json` (`license` said ISC while `LICENSE` has always been
+  GPL-3.0). October 2026.
 
 - Add `npm run sign:firefox`: build then sign the Firefox package through the
   AMO `unlisted` channel, so the extension can be installed on another computer
