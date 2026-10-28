@@ -64,13 +64,31 @@ const initialState: AppState = {
 
 // written out instead of combineReducers(): with the redux 5 typings the inferred
 // preloaded state of combineReducers() is `Partial<{ ...: never }>`, which does not
-// typecheck when passed to createStore().
-const rootReducer: Reducer<AppState, Action> = (state = initialState, action) => ({
-	rate: rate(state.rate, action),
-	price: price(state.price, action),
-	rank: rank(state.rank, action),
-	options: options(state.options, action)
-})
+// typecheck when passed to createStore(). Like combineReducers(), it returns the
+// previous state object when no slice changed, so unrelated actions do not look
+// like a state update to react-redux.
+const rootReducer: Reducer<AppState, Action> = (state = initialState, action) => {
+	const nextRate = rate(state.rate, action)
+	const nextPrice = price(state.price, action)
+	const nextRank = rank(state.rank, action)
+	const nextOptions = options(state.options, action)
+
+	if (
+		nextRate === state.rate &&
+		nextPrice === state.price &&
+		nextRank === state.rank &&
+		nextOptions === state.options
+	) {
+		return state
+	}
+
+	return {
+		rate: nextRate,
+		price: nextPrice,
+		rank: nextRank,
+		options: nextOptions
+	}
+}
 
 export type RootState = AppState
 

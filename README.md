@@ -94,10 +94,30 @@ browsers (html, icons) live in `extension/`.
   select `dist/firefox/manifest.json`.
 - Validate the Firefox package: `npm run lint:firefox`.
 
+### 6.4 Tests
+
+```
+npm test          # vitest + jsdom, single run
+npm run test:watch
+```
+
+Covered: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the reducers
+and the content script message handling. The price fixtures use both the German
+(`1.234,56 €`) and British (`£1,234.56`) formats on purpose: the Amazon markets
+disagree on decimal and thousands separators.
+
 ## 7 Changelog
 
 ### Unreleased
 
+- Add a test suite (vitest + jsdom) covering the price/rank parsing, the reducers
+  and the content script.
+- Fix the legacy price parsing: prices with a thousands separator were misread
+  (`1.234,56 €` came out as `1.234`, `£1,234.56` as `1.234`).
+- Fix an empty price whole part being reported as `0.56` instead of "can't parse".
+- The root reducer returns the previous state object for unrelated actions again
+  (regression introduced when replacing `combineReducers()` in the TypeScript
+  migration).
 - Migrate the sources to TypeScript (`strict`, `chromium` typings through
   `@types/chrome`), checked with `tsc --noEmit` before every build.
 - Firefox support: `manifests/manifest.firefox.json` adds the

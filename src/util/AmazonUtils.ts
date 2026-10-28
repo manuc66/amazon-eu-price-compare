@@ -38,6 +38,27 @@ function damnYouEuropeanNumbers(price: string): string {
 	return price.replace(/[^0-9.,]+/, '').replace(/,/, '').replace(/\./, '')
 }
 
+/**
+ * Turns a price as displayed by Amazon ("12,34 €", "1.234,56 €", "£1,234.56")
+ * into a string parseFloat() understands: "12.34", "1234.56", "1234.56".
+ * The last separator is a decimal separator when 1 or 2 digits follow it,
+ * every other separator is a thousands separator.
+ */
+function normalizePrice(text: string): string | null {
+	var digitsAndSeparators = text.replace(/[^0-9.,]/g, '')
+	if (digitsAndSeparators === '') {
+		return null
+	}
+
+	var match = /^([0-9.,]*?)[.,]([0-9]{1,2})$/.exec(digitsAndSeparators)
+	if (match !== null) {
+		var integerPart = match[1].replace(/[.,]/g, '')
+		return (integerPart === '' ? '0' : integerPart) + '.' + match[2]
+	}
+
+	return digitsAndSeparators.replace(/[.,]/g, '')
+}
+
 function getWholePrice(doc: Document): string | null {
 	// handle price before the point
 	var priceWhole = doc.getElementsByClassName("a-price aok-align-center")
@@ -73,12 +94,12 @@ function getOldPrice(price: HTMLCollectionOf<Element>): string | null {
 	if (!(priceElement instanceof HTMLElement)) {
 		return null
 	}
-	return priceElement.innerText.replace(/[^0-9.,]+/, '').replace(/,/, '.')
+	return normalizePrice(priceElement.innerText)
 }
 
 function getNewPrice(doc: Document): string | null {
 	var priceWhole = getWholePrice(doc)
-	if (priceWhole === null) {
+	if (priceWhole === null || priceWhole === '') {
 		return null
 	}
 
