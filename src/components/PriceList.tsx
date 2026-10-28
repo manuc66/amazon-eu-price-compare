@@ -9,6 +9,8 @@ export interface PriceListProps {
 	options: Options
 	/** ASIN of the product being browsed */
 	productID: string | null
+	/** true while prices are still being fetched */
+	loading: boolean
 	getOptions: () => void
 	getCurrentPageUrl: () => void
 }
@@ -44,6 +46,14 @@ export default class PriceList extends Component<PriceListProps> {
 
 	render() {
 		if (this.props.price.length === 0) {
+			if (this.props.loading) {
+				return (
+					<div className="loading">
+						<div className="spinner" />
+						<p>Fetching prices…</p>
+					</div>
+					)
+			}
 			return (
 				<p>Not amazon product detail page or can't parse price</p>
 				)
@@ -107,11 +117,14 @@ export default class PriceList extends Component<PriceListProps> {
 		})
 
 		return (
+			<>
+			{this.props.loading && <div className="progress"><div className="progress-bar" /></div>}
 			<table className="pricelist">
 			<tbody>
 			{price_list}
 			</tbody>
 			</table>
+			</>
 			)
 	}
 }

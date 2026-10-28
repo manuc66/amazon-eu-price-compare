@@ -9,7 +9,8 @@ const mapStateToProps = (state: RootState) => {
 		price: state.price,
 		rank: state.rank,
 		options: state.options,
-		productID: state.productID
+		productID: state.productID,
+		loading: state.pending > 0
 	}
 }
 

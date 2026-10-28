@@ -5,10 +5,20 @@ import type { Market } from '../markets'
 import type { Options } from '../types'
 import type { RootState } from '../reducers'
 
+export const REQUEST_STARTED = 'REQUEST_STARTED'
+export const REQUEST_FINISHED = 'REQUEST_FINISHED'
 export const RECEIVE_CURRENT_PAGE_PRICE = 'RECEIVE_CURRENT_PAGE_PRICE'
 export const RECEIVE_COUNTRY_PRICE = 'RECEIVE_COUNTRY_PRICE'
 export const RECEIVE_COUNTRY_RANK = 'RECEIVE_COUNTRY_RANK'
 export const RECEIVE_OPTIONS = 'RECEIVE_OPTIONS'
+
+export interface RequestStartedAction {
+	type: typeof REQUEST_STARTED
+}
+
+export interface RequestFinishedAction {
+	type: typeof REQUEST_FINISHED
+}
 
 export interface ReceiveCurrentPagePriceAction {
 	type: typeof RECEIVE_CURRENT_PAGE_PRICE
@@ -37,6 +47,8 @@ export interface ReceiveOptionsAction {
 }
 
 export type Action =
+	| RequestStartedAction
+	| RequestFinishedAction
 	| ReceiveCurrentPagePriceAction
 	| ReceiveCountryPriceAction
 	| ReceiveCountryRankAction
@@ -46,6 +58,15 @@ export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unk
 
 /** [price, rank] as sent back by the content script. */
 type PageInfoResponse = [number | null, string | null]
+
+/** One in-flight request: the popup shows a loader while the count is above 0. */
+export function requestStarted(): RequestStartedAction {
+	return { type: REQUEST_STARTED }
+}
+
+export function requestFinished(): RequestFinishedAction {
+	return { type: REQUEST_FINISHED }
+}
 
 export function receiveCurrentPagePrice(country: string, price: number, productID: string): ReceiveCurrentPagePriceAction {
 	return {
@@ -95,9 +116,11 @@ export function getCurrentPageUrl(): AppThunk {
 				return
 			}
 
+			dispatch(requestStarted())
 			chrome.tabs.sendMessage(tab.id, { "message": "get_current_page_info" }, function (response: PageInfoResponse | undefined) {
 				// reading lastError keeps chrome from logging "Could not establish connection"
 				void chrome.runtime.lastError
+				dispatch(requestFinished())
 
 				if (response === undefined || response[0] === null) {
 					return
@@ -134,6 +157,7 @@ export function getOptions(): AppThunk {
 export function getCountryPrice(productID: string, market: Market): AppThunk {
 	return (dispatch) => {
 		var url = amzUtil.generateAmazonProductPageUrl(productID, market)
+		dispatch(requestStarted())
 		fetch(
 			url,
 			{
@@ -164,6 +188,9 @@ export function getCountryPrice(productID: string, market: Market): AppThunk {
 			.catch(function (err: unknown) {
 				var message = err instanceof Error ? err.message : String(err)
 				console.log('There has been a problem with fetching price for other amazon markets: ' + message)
+			})
+			.finally(function () {
+				dispatch(requestFinished())
 			})
 	}
 }

@@ -1,5 +1,7 @@
 import type { Reducer } from 'redux'
 import {
+	REQUEST_STARTED,
+	REQUEST_FINISHED,
 	RECEIVE_CURRENT_PAGE_PRICE,
 	RECEIVE_COUNTRY_PRICE,
 	RECEIVE_COUNTRY_RANK,
@@ -37,6 +39,17 @@ const options: Reducer<Options, Action> = (state = { showRanks: false, showUsMar
 	}
 }
 
+const pending: Reducer<number, Action> = (state = 0, action) => {
+	switch (action.type) {
+		case REQUEST_STARTED:
+			return state + 1
+		case REQUEST_FINISHED:
+			return Math.max(0, state - 1)
+		default:
+			return state
+	}
+}
+
 const productID: Reducer<string | null, Action> = (state = null, action) => {
 	switch (action.type) {
 		case RECEIVE_CURRENT_PAGE_PRICE:
@@ -53,13 +66,16 @@ export interface AppState {
 	options: Options
 	/** ASIN of the product being browsed, null outside a product page */
 	productID: string | null
+	/** number of in-flight requests */
+	pending: number
 }
 
 const initialState: AppState = {
 	price: [],
 	rank: {},
 	options: { showRanks: false, showUsMarket: false },
-	productID: null
+	productID: null,
+	pending: 0
 }
 
 // written out instead of combineReducers(): with the redux 5 typings the inferred
@@ -72,12 +88,14 @@ const rootReducer: Reducer<AppState, Action> = (state = initialState, action) =>
 	const nextRank = rank(state.rank, action)
 	const nextOptions = options(state.options, action)
 	const nextProductID = productID(state.productID, action)
+	const nextPending = pending(state.pending, action)
 
 	if (
 		nextPrice === state.price &&
 		nextRank === state.rank &&
 		nextOptions === state.options &&
-		nextProductID === state.productID
+		nextProductID === state.productID &&
+		nextPending === state.pending
 	) {
 		return state
 	}
@@ -86,7 +104,8 @@ const rootReducer: Reducer<AppState, Action> = (state = initialState, action) =>
 		price: nextPrice,
 		rank: nextRank,
 		options: nextOptions,
-		productID: nextProductID
+		productID: nextProductID,
+		pending: nextPending
 	}
 }
 

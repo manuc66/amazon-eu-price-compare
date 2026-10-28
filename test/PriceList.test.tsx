@@ -9,7 +9,8 @@ function render(
 	price: CountryPrice[],
 	rank: CountryRanks = {},
 	options: Options = { showRanks: false, showUsMarket: true },
-	productID: string | null = ASIN
+	productID: string | null = ASIN,
+	loading = false
 ): string {
 	return renderToStaticMarkup(
 		<PriceList
@@ -17,6 +18,7 @@ function render(
 			rank={rank}
 			options={options}
 			productID={productID}
+			loading={loading}
 			getOptions={() => {}}
 			getCurrentPageUrl={() => {}}
 		/>
@@ -37,8 +39,25 @@ function rowOf(html: string, country: string): string {
 }
 
 describe('PriceList', () => {
-	it('shows the message when there is no price yet', () => {
+	it('shows the message when there is no price and nothing is loading', () => {
 		expect(render([])).toContain('Not amazon product detail page')
+	})
+
+	it('shows a spinner instead of the message while the first prices load', () => {
+		const html = render([], {}, { showRanks: false, showUsMarket: true }, ASIN, true)
+		expect(html).toContain('Fetching prices')
+		expect(html).toContain('spinner')
+		expect(html).not.toContain('Not amazon product detail page')
+	})
+
+	it('keeps the table and shows a progress bar while more prices load', () => {
+		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, showUsMarket: true }, ASIN, true)
+		expect(html).toContain('progress-bar')
+		expect(html).toContain('>DE<')
+	})
+
+	it('hides the progress bar once loading is done', () => {
+		expect(render([{ country: 'de', price: 20 }])).not.toContain('progress-bar')
 	})
 
 	it('shows a euro price for a euro store, without duplicating it', () => {

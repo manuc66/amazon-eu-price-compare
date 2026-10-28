@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import rootReducer from '../src/reducers'
 import {
+	REQUEST_FINISHED,
+	REQUEST_STARTED,
 	RECEIVE_COUNTRY_PRICE,
 	RECEIVE_COUNTRY_RANK,
 	RECEIVE_CURRENT_PAGE_PRICE,
@@ -16,7 +18,8 @@ describe('rootReducer', () => {
 			price: [],
 			rank: {},
 			options: { showRanks: false, showUsMarket: false },
-			productID: null
+			productID: null,
+			pending: 0
 		})
 	})
 
@@ -54,6 +57,20 @@ describe('rootReducer', () => {
 	it('replaces the options', () => {
 		const state = rootReducer(undefined, { type: RECEIVE_OPTIONS, items: { showRanks: true, showUsMarket: true } })
 		expect(state.options).toEqual({ showRanks: true, showUsMarket: true })
+	})
+
+	it('counts the in-flight requests', () => {
+		let state = rootReducer(undefined, { type: REQUEST_STARTED })
+		state = rootReducer(state, { type: REQUEST_STARTED })
+		expect(state.pending).toBe(2)
+
+		state = rootReducer(state, { type: REQUEST_FINISHED })
+		expect(state.pending).toBe(1)
+	})
+
+	it('never counts below zero', () => {
+		const state = rootReducer(undefined, { type: REQUEST_FINISHED })
+		expect(state.pending).toBe(0)
 	})
 
 	it('returns the same state object for an unknown action', () => {
