@@ -116,14 +116,29 @@ browsers (html, icons) live in `extension/`.
 ### 6.4 Tests
 
 ```
-npm test          # vitest + jsdom, single run
-npm run test:watch
+npm test                                       # vitest + jsdom, single run
+npm run test:watch                             # watch mode
+FIREFOX_BIN=/path/to/firefox npm run test:e2e:firefox
 ```
 
-Covered: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the market
-table and the store selection, the price list rendering, the reducers, the
-content script message handling, the options page, and the consistency between
-`src/markets.ts` and the two manifests.
+`test:e2e:firefox` installs the built `dist/firefox` as a temporary add-on in a
+real (headless) Firefox, through Marionette directly — no geckodriver, no extra
+dependency. It checks that the add-on installs, that Firefox itself resolves the
+content script patterns for an `amazon.de` url, that the script is injected at
+`document_start`, and that `storage`/`activeTab` are granted.
+
+Firefox refuses to navigate to `moz-extension://` urls over Marionette, so the
+popup UI is not driven by that test. To check it by hand:
+
+```
+npm run start:firefox -- --firefox /path/to/firefox   # builds, then web-ext run
+npm run start:chrome                                  # same for Chromium
+```
+
+Covered by vitest: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the
+market table and the store selection, the price list rendering, the reducers,
+the content script message handling, the options page, and the consistency
+between `src/markets.ts` and the two manifests.
 
 The price fixtures use both the German (`1.234,56 €`) and British (`£1,234.56`)
 formats on purpose: the Amazon markets disagree on decimal and thousands
@@ -133,6 +148,9 @@ separators.
 
 ### Unreleased
 
+- Add an end-to-end smoke test against a real Firefox (`npm run test:e2e:firefox`,
+  Marionette, headless) and `npm run start:firefox` / `start:chrome` to load the
+  built extension in a browser.
 - Optional comparison with **amazon.com** (USD), disabled by default: prices
   there exclude VAT and shipping, so the row is marked as indicative.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
