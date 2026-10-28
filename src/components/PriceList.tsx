@@ -87,12 +87,16 @@ export default class PriceList extends Component<PriceListProps> {
 			return (
 				<tr key={amz.country}>
 				<td className="amazon">Amazon</td>
-				<td className="country">
-					{amz.country.toUpperCase()}
-					{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}
+				<td className="country">{amz.country.toUpperCase()}{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}</td>
+				{amz.currency !== REFERENCE_CURRENCY &&
+					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a></td>}
+				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
+				{showRanks === true &&
+					<td className="rank">{amz.rank}</td>}
+				<td className="history">
 					{amz.camel !== null &&
 						<a
-							className="history"
+							className="camel"
 							href={amz.camel}
 							target="_blank"
 							title="Price history on camelcamelcamel"
@@ -100,18 +104,13 @@ export default class PriceList extends Component<PriceListProps> {
 						>🐪</a>}
 					{amz.keepa !== null &&
 						<a
-							className="history"
+							className="keepa"
 							href={amz.keepa}
 							target="_blank"
 							title="Price history on Keepa"
 							aria-label="Price history on Keepa"
 						>K</a>}
 				</td>
-				{amz.currency !== REFERENCE_CURRENCY &&
-					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a></td>}
-				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>
-				{showRanks === true &&
-					<td className="rank">{amz.rank}</td>}
 					</tr>
 					)
 		})

@@ -51,31 +51,48 @@
         to { transform: rotate(360deg); }
       }
       a {text-decoration: none; }
+      table.pricelist {
+        width: 100%;
+        border-collapse: collapse;
+      }
       td {
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+        padding: 2px 4px;
+        vertical-align: middle;
       }
       td.amazon {
-        text-align: center;
-        width: 100px;
+        text-align: left;
+        color: #888;
+        font-size: 90%;
       }
       td.country {
-        text-align: center;
-        width: 50px;
+        text-align: left;
+        white-space: nowrap;
       }
       td.price {
-        text-align: left;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
       }
-      td.country a.history {
-        margin-left: 3px;
-        font-size: 12px;
-      }
-      td.country a.history + a.history {
-        margin-left: 2px;
-        font-weight: bold;
-        font-size: 10px;
+      td.rank {
+        text-align: right;
         color: #666;
+      }
+      /* price history links live in their own column, on the right, so the rows
+         that have none do not leave a gap in the middle of the table */
+      td.history {
+        text-align: right;
+        white-space: nowrap;
+      }
+      td.history a {
+        margin-left: 4px;
+        font-size: 12px;
+        vertical-align: middle;
+      }
+      td.history a.keepa {
+        font-weight: bold;
+        color: #444;
       }
       tr:first-child {
         font-weight: bold;
