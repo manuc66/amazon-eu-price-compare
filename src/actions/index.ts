@@ -64,7 +64,7 @@ export type Action =
 	| ReceiveCountryRankAction
 	| ReceiveOptionsAction
 
-export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, Action>
+export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, undefined, Action>
 
 /** Keeps only the known country codes, falling back to the defaults. */
 function readCountries(value: unknown): string[] {
@@ -130,7 +130,8 @@ export function receiveOptions(items: Options): ReceiveOptionsAction {
 }
 
 // async action
-export function getCurrentPageUrl(): AppThunk<Promise<void>> {
+/** `force` ignores the cache, for the refresh button. */
+export function getCurrentPageUrl(force = false): AppThunk<Promise<void>> {
 	return async (dispatch, getState) => {
 		const tab = await queryActiveTab()
 		if (tab === undefined || tab.id === undefined || typeof tab.url !== 'string') {
@@ -144,7 +145,7 @@ export function getCurrentPageUrl(): AppThunk<Promise<void>> {
 		}
 
 		// reopening the popup on the same product shows the last comparison at once
-		const cached = await readCachedPrices(productID)
+		const cached = force ? null : await readCachedPrices(productID)
 		if (cached !== null) {
 			dispatch(restoreCachedPrices(cached.price, cached.rank, productID))
 			if (isFresh(cached)) {

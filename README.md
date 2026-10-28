@@ -86,6 +86,7 @@ npm run release    # tests, both builds, the two store zips and the add-on lint
 | `npm test` | vitest, single run (`test:watch` to iterate) |
 | `npm run zip` | `dist/amazon-eu-price-compare-chrome.zip` and `-firefox.zip` |
 | `npm run lint:firefox` | `web-ext lint` on the Firefox build |
+| `npm run sign:firefox` | build + sign the Firefox package for self-distribution (AMO credentials needed, see 6.5) |
 | `npm run release` | everything above, in the order a release needs |
 
 `npm run release` stops at the first failing step, so a red test, a type error
@@ -144,10 +145,50 @@ The price fixtures use both the German (`1.234,56 €`) and British (`£1,234.56
 formats on purpose: the Amazon markets disagree on decimal and thousands
 separators.
 
+### 6.5 Install on another computer, without a store
+
+Publishing is not required to install the extension elsewhere: both browsers
+accept a local build, but Firefox only accepts a package signed by Mozilla.
+
+**Firefox — signed, permanent.** The AMO `unlisted` channel signs an add-on
+without listing it publicly. Create API credentials at
+<https://addons.mozilla.org/developers/addon/api/key/>, then:
+
+```
+export WEB_EXT_API_KEY='user:12345:67'
+export WEB_EXT_API_SECRET='...'
+npm run sign:firefox          # builds, signs, writes dist/signed/*.xpi
+```
+
+Send the `.xpi` over, then `about:addons` → gear icon → "Install Add-on From
+File". It survives restarts, unlike the temporary add-on of section 6.3.
+
+- Signing is not a private matter: AMO runs its validation (and sometimes a
+  human review) on every submission, even unlisted. The add-on still has to
+  follow the [add-on policies](https://extensionworkshop.com/documentation/publish/add-on-policies/).
+- Keep the id in `manifests/manifest.firefox.json` stable: changing it makes
+  AMO treat the package as a brand new add-on.
+- AMO rejects a version it already signed, so bump `version` in both manifests
+  before signing again. Installing the new `.xpi` updates the existing copy in
+  place.
+- Sign what `build:firefox` just produced; never sign a hand-edited
+  `dist/firefox`.
+
+**Chrome, Edge, Brave — unpacked.** Copy `dist/chrome` to the other machine,
+open `chrome://extensions`, enable developer mode, "Load unpacked", pick the
+folder. It survives restarts, but the developer-mode warning stays and the
+folder must not be moved or deleted. Windows and macOS refuse `.crx` files from
+outside the store; only Linux can pre-install one through a preferences file.
+
 ## 7 Changelog
+
 
 ### Unreleased
 
+- Add `npm run sign:firefox`: build then sign the Firefox package through the
+  AMO `unlisted` channel, so the extension can be installed on another computer
+  without a store listing. Documented in 6.5, along with the unpacked Chrome
+  route.
 - Add price history links on each row: 🐪 for camelcamelcamel and **K** for
   Keepa. Both sites only cover some marketplaces (US, UK, DE, FR, IT, ES for our
   stores), so NL, SE, PL, BE and IE get no history link.
@@ -164,7 +205,11 @@ separators.
   popup on the same product shows the previous table immediately, and no
   request at all is made if it is less than two minutes old.
 - Table alignment: prices right aligned with tabular figures, and the price
-  history links in their own column on the right.
+  history links in their own column on the right. `overflow: hidden` is gone
+  from the cells: it was shrinking that last column to nothing.
+- A discreet ⟳ button below the table forces a refresh and bypasses the cache.
+- redux-logger is only added in development builds, so the shipped popup no
+  longer logs every action.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
   **amazon.ie** (EUR), for ten stores in total.
 - Replace the hardcoded country list, the per-country display branches and the

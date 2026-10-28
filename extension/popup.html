@@ -57,8 +57,6 @@
       }
       td {
         white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
         padding: 2px 4px;
         vertical-align: middle;
       }
@@ -80,8 +78,11 @@
         color: #666;
       }
       /* price history links live in their own column, on the right, so the rows
-         that have none do not leave a gap in the middle of the table */
+         that have none do not leave a gap in the middle of the table.
+         width:1% keeps the column at its content size, and nothing may clip it:
+         overflow:hidden on a td shrinks it to nothing when the table is squeezed */
       td.history {
+        width: 1%;
         text-align: right;
         white-space: nowrap;
       }
@@ -100,6 +101,23 @@
       }
       p {
         white-space: nowrap;
+      }
+      .toolbar {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 2px;
+      }
+      button.refresh {
+        background: none;
+        border: 0;
+        padding: 0 2px;
+        cursor: pointer;
+        font-size: 13px;
+        line-height: 1;
+        color: #bbb;
+      }
+      button.refresh:hover {
+        color: #666;
       }
       .optionslink {
         cursor: pointer;

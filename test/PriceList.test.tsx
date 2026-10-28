@@ -21,6 +21,7 @@ function render(
 			loading={loading}
 			getOptions={() => {}}
 			getCurrentPageUrl={() => {}}
+			refresh={() => {}}
 		/>
 	)
 }
@@ -147,6 +148,12 @@ describe('PriceList', () => {
 	it('builds no history link outside a product page', () => {
 		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, enabledCountries: [] }, null)
 		expect(html).not.toContain('camelcamelcamel')
+	})
+
+	it('shows a discreet refresh button, whatever the state', () => {
+		expect(render([{ country: 'de', price: 20 }])).toContain('title="Refresh prices"')
+		expect(render([])).toContain('title="Refresh prices"')
+		expect(render([], {}, { showRanks: false, enabledCountries: [] }, ASIN, true)).toContain('title="Refresh prices"')
 	})
 
 	it('adds the rank column only when the option is enabled', () => {

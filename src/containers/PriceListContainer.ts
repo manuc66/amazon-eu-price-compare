@@ -19,6 +19,9 @@ const mapDispatchToProps = (dispatch: AppDispatch) => {
 		getCurrentPageUrl: () => {
 			dispatch(getCurrentPageUrl())
 		},
+		refresh: () => {
+			dispatch(getCurrentPageUrl(true))
+		},
 		getOptions: () => {
 			dispatch(getOptions())
 		}

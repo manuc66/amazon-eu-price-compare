@@ -41,7 +41,7 @@ function stubFetch(): void {
 	vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('<html></html>') })))
 }
 
-async function run(url: string, cached: Record<string, unknown> = {}): Promise<Action[]> {
+async function run(url: string, cached: Record<string, unknown> = {}, force = false): Promise<Action[]> {
 	stubChrome(url, cached)
 	stubFetch()
 	const actions: Action[] = []
@@ -53,7 +53,7 @@ async function run(url: string, cached: Record<string, unknown> = {}): Promise<A
 		}
 		actions.push(action as Action)
 	}
-	getCurrentPageUrl()(dispatch, state, undefined)
+	getCurrentPageUrl(force)(dispatch, state, undefined)
 	await new Promise((resolve) => setTimeout(resolve, 20))
 	return actions
 }
@@ -100,6 +100,20 @@ describe('getCurrentPageUrl', () => {
 			rank: { de: '#1 in Electronics' },
 			productID: ASIN
 		})
+	})
+
+	it('ignores a fresh cache when the refresh button is used', async () => {
+		const cached = {
+			[`prices:${ASIN}`]: {
+				savedAt: Date.now(),
+				price: [{ country: 'de', price: 42.5, current: true }],
+				rank: {}
+			}
+		}
+		const actions = await run(`https://www.amazon.de/dp/${ASIN}`, cached, true)
+
+		expect(count(actions, 'RESTORE_CACHED_PRICES')).toBe(0)
+		expect(count(actions, 'REQUEST_STARTED')).toBeGreaterThan(0)
 	})
 
 	it('shows a stale cache at once, then refreshes it', async () => {

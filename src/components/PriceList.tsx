@@ -13,6 +13,8 @@ export interface PriceListProps {
 	loading: boolean
 	getOptions: () => void
 	getCurrentPageUrl: () => void
+	/** ignores the cache and fetches every store again */
+	refresh: () => void
 }
 
 interface PriceRow {
@@ -45,17 +47,35 @@ export default class PriceList extends Component<PriceListProps> {
 	}
 
 	render() {
+		const toolbar = (
+			<div className="toolbar">
+				<button
+					className="refresh"
+					type="button"
+					title="Refresh prices"
+					aria-label="Refresh prices"
+					onClick={() => this.props.refresh()}
+				>⟳</button>
+			</div>
+			)
+
 		if (this.props.price.length === 0) {
 			if (this.props.loading) {
 				return (
+					<>
 					<div className="loading">
 						<div className="spinner" />
 						<p>Fetching prices…</p>
 					</div>
+					{toolbar}
+					</>
 					)
 			}
 			return (
+				<>
 				<p>Not amazon product detail page or can't parse price</p>
+				{toolbar}
+				</>
 				)
 		}
 
@@ -123,6 +143,7 @@ export default class PriceList extends Component<PriceListProps> {
 			{price_list}
 			</tbody>
 			</table>
+			{toolbar}
 			</>
 			)
 	}
