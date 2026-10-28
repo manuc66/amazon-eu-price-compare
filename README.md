@@ -216,7 +216,19 @@ outside the store; only Linux can pre-install one through a preferences file.
 - Every link opens its tab and closes the popup, instead of leaving the panel
   open behind the new tab.
 - redux-logger is only added in development builds, so the shipped popup no
-  longer logs every action.
+  longer logs every action. The production build also aliases it to a no-op
+  (`src/shims/redux-logger.ts`): the package is a UMD bundle referencing
+  `global`, which made webpack emit a `new Function('return this')` helper that
+  the Firefox linter reports as eval. The popup is 10 KiB lighter.
+- `npm run lint:bundle` fails the release if a build ships `eval`, the
+  `Function` constructor or redux-logger.
+- Firefox manifest: `gecko_android.strict_min_version` 142, the first Android
+  version that understands `data_collection_permissions`.
+
+Known and accepted: `web-ext lint` still reports two `UNSAFE_VAR_ASSIGNMENT`
+(innerHTML) warnings. They come from React DOM's internals (attribute
+sanitization and `dangerouslySetInnerHTML` support), not from this code, and
+are the usual false positives AMO reviewers accept.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
   **amazon.ie** (EUR), for ten stores in total.
 - Replace the hardcoded country list, the per-country display branches and the

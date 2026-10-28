@@ -1,12 +1,20 @@
 const path = require('path')
 const webpack = require('webpack')
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 // set by scripts/build.js, which builds one browser target at a time
 const outputDir = process.env.EXTENSION_OUTPUT_DIR || path.resolve(__dirname, 'dist', 'chrome')
 
 module.exports = {
 	resolve: {
-		extensions: ['.tsx', '.ts', '.js']
+		extensions: ['.tsx', '.ts', '.js'],
+		alias: isProduction
+			// redux-logger is a UMD bundle that references `global`, which makes
+			// webpack emit a `new Function('return this')` helper the Firefox
+			// linter reports as eval. It is a development tool: stub it out.
+			? { 'redux-logger$': path.resolve(__dirname, 'src', 'shims', 'redux-logger.ts') }
+			: {}
 	},
   entry: {
     'popup': './src/index.tsx',

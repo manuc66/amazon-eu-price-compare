@@ -6,6 +6,10 @@ import { MARKETS } from '../src/markets'
 interface Manifest {
 	host_permissions?: string[]
 	content_scripts?: { matches?: string[] }[]
+	browser_specific_settings?: {
+		gecko?: { strict_min_version?: string; data_collection_permissions?: unknown }
+		gecko_android?: { strict_min_version?: string }
+	}
 }
 
 function readManifest(name: string): Manifest {
@@ -30,6 +34,19 @@ describe.each(MANIFESTS)('%s', (name) => {
 
 		expect(missingHosts).toEqual([])
 		expect(missingMatches).toEqual([])
+	})
+
+	it('declares a Firefox for Android version that understands the data collection key', () => {
+		const settings = manifest.browser_specific_settings
+		if (settings?.gecko?.data_collection_permissions === undefined) {
+			return
+		}
+
+		// the key is understood from Firefox for Android 142 only: without this,
+		// the add-on claims Android support from a version that ignores it
+		const android = settings.gecko_android?.strict_min_version
+		expect(android).toBeDefined()
+		expect(Number.parseFloat(android as string)).toBeGreaterThanOrEqual(142)
 	})
 
 	it('declares no amazon store that is not in the market table', () => {
