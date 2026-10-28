@@ -37,17 +37,29 @@ const options: Reducer<Options, Action> = (state = { showRanks: false, showUsMar
 	}
 }
 
+const productID: Reducer<string | null, Action> = (state = null, action) => {
+	switch (action.type) {
+		case RECEIVE_CURRENT_PAGE_PRICE:
+			return action.productID
+		default:
+			return state
+	}
+}
+
 /** Shape of the redux store. */
 export interface AppState {
 	price: CountryPrice[]
 	rank: CountryRanks
 	options: Options
+	/** ASIN of the product being browsed, null outside a product page */
+	productID: string | null
 }
 
 const initialState: AppState = {
 	price: [],
 	rank: {},
-	options: { showRanks: false, showUsMarket: false }
+	options: { showRanks: false, showUsMarket: false },
+	productID: null
 }
 
 // written out instead of combineReducers(): with the redux 5 typings the inferred
@@ -59,15 +71,22 @@ const rootReducer: Reducer<AppState, Action> = (state = initialState, action) =>
 	const nextPrice = price(state.price, action)
 	const nextRank = rank(state.rank, action)
 	const nextOptions = options(state.options, action)
+	const nextProductID = productID(state.productID, action)
 
-	if (nextPrice === state.price && nextRank === state.rank && nextOptions === state.options) {
+	if (
+		nextPrice === state.price &&
+		nextRank === state.rank &&
+		nextOptions === state.options &&
+		nextProductID === state.productID
+	) {
 		return state
 	}
 
 	return {
 		price: nextPrice,
 		rank: nextRank,
-		options: nextOptions
+		options: nextOptions,
+		productID: nextProductID
 	}
 }
 

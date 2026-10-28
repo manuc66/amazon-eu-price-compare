@@ -3,12 +3,20 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import PriceList from '../src/components/PriceList'
 import type { CountryPrice, CountryRanks, Options } from '../src/types'
 
-function render(price: CountryPrice[], rank: CountryRanks = {}, options: Options = { showRanks: false, showUsMarket: true }): string {
+const ASIN = 'B08N5WRWNW'
+
+function render(
+	price: CountryPrice[],
+	rank: CountryRanks = {},
+	options: Options = { showRanks: false, showUsMarket: true },
+	productID: string | null = ASIN
+): string {
 	return renderToStaticMarkup(
 		<PriceList
 			price={price}
 			rank={rank}
 			options={options}
+			productID={productID}
 			getOptions={() => {}}
 			getCurrentPageUrl={() => {}}
 		/>
@@ -78,6 +86,48 @@ describe('PriceList', () => {
 		expect(row).toContain('$ 199.00')
 		expect(row).toContain('€ 171.14')
 		expect(row).toContain('excl. VAT')
+	})
+
+	it('links to the camelcamelcamel price history of each covered store', () => {
+		const html = render([{ country: 'de', price: 20 }, { country: 'uk', price: 10 }])
+		expect(rowOf(html, 'de')).toContain(`https://de.camelcamelcamel.com/product/${ASIN}`)
+		expect(rowOf(html, 'uk')).toContain(`https://uk.camelcamelcamel.com/product/${ASIN}`)
+		expect(rowOf(html, 'de')).toContain('🐪')
+	})
+
+	it('leaves the stores camelcamelcamel does not cover without a history link', () => {
+		const html = render([{ country: 'nl', price: 20 }, { country: 'pl', price: 100 }])
+		expect(rowOf(html, 'nl')).not.toContain('camelcamelcamel')
+		expect(rowOf(html, 'pl')).not.toContain('camelcamelcamel')
+	})
+
+	it('links to the Keepa price history of each covered store', () => {
+		const html = render([{ country: 'de', price: 20 }, { country: 'us', price: 199 }])
+		expect(rowOf(html, 'de')).toContain(`https://keepa.com/#!product/3-${ASIN}`)
+		expect(rowOf(html, 'us')).toContain(`https://keepa.com/#!product/1-${ASIN}`)
+		expect(rowOf(html, 'de')).toContain('>K</a>')
+	})
+
+	it('shows both history links on the stores both sites cover', () => {
+		const row = rowOf(render([{ country: 'de', price: 20 }]), 'de')
+		expect(row).toContain('🐪')
+		expect(row).toContain('>K</a>')
+	})
+
+	it('shows no history link at all on a store neither site covers', () => {
+		const row = rowOf(render([{ country: 'se', price: 100 }]), 'se')
+		expect(row).not.toContain('camelcamelcamel')
+		expect(row).not.toContain('keepa.com')
+	})
+
+	it('links amazon.com to the bare camelcamelcamel domain', () => {
+		const row = rowOf(render([{ country: 'us', price: 199 }]), 'us')
+		expect(row).toContain(`https://camelcamelcamel.com/product/${ASIN}`)
+	})
+
+	it('builds no history link outside a product page', () => {
+		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, showUsMarket: true }, null)
+		expect(html).not.toContain('camelcamelcamel')
 	})
 
 	it('adds the rank column only when the option is enabled', () => {

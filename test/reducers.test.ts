@@ -15,7 +15,8 @@ describe('rootReducer', () => {
 		expect(rootReducer(undefined, UNKNOWN_ACTION)).toEqual({
 			price: [],
 			rank: {},
-			options: { showRanks: false, showUsMarket: false }
+			options: { showRanks: false, showUsMarket: false },
+			productID: null
 		})
 	})
 
@@ -23,20 +24,22 @@ describe('rootReducer', () => {
 		const state = rootReducer(undefined, {
 			type: RECEIVE_CURRENT_PAGE_PRICE,
 			country: 'de',
-			price: 42.5
+			price: 42.5,
+			productID: 'B08N5WRWNW'
 		})
 		expect(state.price).toEqual([{ country: 'de', price: 42.5, current: true }])
+		expect(state.productID).toBe('B08N5WRWNW')
 	})
 
 	it('replaces the previous price of the same store instead of duplicating it', () => {
-		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5 })
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B08N5WRWNW' })
 		state = rootReducer(state, { type: RECEIVE_COUNTRY_PRICE, country: 'de', price: 40, url: 'https://www.amazon.de/dp/B08N5WRWNW/' })
 		expect(state.price).toHaveLength(1)
 		expect(state.price[0]).toEqual({ country: 'de', price: 40, url: 'https://www.amazon.de/dp/B08N5WRWNW/' })
 	})
 
 	it('accumulates one price per store', () => {
-		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5 })
+		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5, productID: 'B08N5WRWNW' })
 		state = rootReducer(state, { type: RECEIVE_COUNTRY_PRICE, country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' })
 		state = rootReducer(state, { type: RECEIVE_COUNTRY_PRICE, country: 'pl', price: 180, url: 'https://www.amazon.pl/dp/B08N5WRWNW/' })
 		expect(state.price.map((p) => p.country).sort()).toEqual(['de', 'fr', 'pl'])

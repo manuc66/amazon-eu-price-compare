@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CURRENCY_SYMBOLS, EUR_PER_UNIT, MARKETS, getMarket, getMarketForUrl, marketsToCompare } from '../src/markets'
+import { CURRENCY_SYMBOLS, EUR_PER_UNIT, MARKETS, camelUrl, getMarket, getMarketForUrl, keepaUrl, marketsToCompare } from '../src/markets'
 
 describe('MARKETS', () => {
 	it('covers the ten European Amazon marketplaces', () => {
@@ -94,5 +94,53 @@ describe('marketsToCompare', () => {
 
 	it('never compares the store the user is browsing', () => {
 		expect(marketsToCompare('us', true).map((market) => market.country)).not.toContain('us')
+	})
+})
+
+describe('camelUrl', () => {
+	const ASIN = 'B08N5WRWNW'
+
+	it.each([
+		['de', `https://de.camelcamelcamel.com/product/${ASIN}`],
+		['fr', `https://fr.camelcamelcamel.com/product/${ASIN}`],
+		['it', `https://it.camelcamelcamel.com/product/${ASIN}`],
+		['es', `https://es.camelcamelcamel.com/product/${ASIN}`],
+		['uk', `https://uk.camelcamelcamel.com/product/${ASIN}`],
+		['us', `https://camelcamelcamel.com/product/${ASIN}`]
+	])('builds the %s price history url', (country, expected) => {
+		expect(camelUrl(ASIN, getMarket(country))).toBe(expected)
+	})
+
+	it.each(['nl', 'se', 'pl', 'be', 'ie'])('has no price history for %s', (country) => {
+		expect(camelUrl(ASIN, getMarket(country))).toBeNull()
+	})
+
+	it('returns null without a product id or a market', () => {
+		expect(camelUrl(null, getMarket('de'))).toBeNull()
+		expect(camelUrl(ASIN, undefined)).toBeNull()
+	})
+})
+
+describe('keepaUrl', () => {
+	const ASIN = 'B08N5WRWNW'
+
+	it.each([
+		['us', `https://keepa.com/#!product/1-${ASIN}`],
+		['uk', `https://keepa.com/#!product/2-${ASIN}`],
+		['de', `https://keepa.com/#!product/3-${ASIN}`],
+		['fr', `https://keepa.com/#!product/4-${ASIN}`],
+		['it', `https://keepa.com/#!product/8-${ASIN}`],
+		['es', `https://keepa.com/#!product/9-${ASIN}`]
+	])('builds the %s price history url', (country, expected) => {
+		expect(keepaUrl(ASIN, getMarket(country))).toBe(expected)
+	})
+
+	it.each(['nl', 'se', 'pl', 'be', 'ie'])('has no price history for %s', (country) => {
+		expect(keepaUrl(ASIN, getMarket(country))).toBeNull()
+	})
+
+	it('returns null without a product id or a market', () => {
+		expect(keepaUrl(null, getMarket('de'))).toBeNull()
+		expect(keepaUrl(ASIN, undefined)).toBeNull()
 	})
 })

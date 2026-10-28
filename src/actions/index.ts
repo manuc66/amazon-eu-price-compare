@@ -14,6 +14,8 @@ export interface ReceiveCurrentPagePriceAction {
 	type: typeof RECEIVE_CURRENT_PAGE_PRICE
 	country: string
 	price: number
+	/** ASIN of the product being browsed, shared by every store */
+	productID: string
 }
 
 export interface ReceiveCountryPriceAction {
@@ -45,11 +47,12 @@ export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unk
 /** [price, rank] as sent back by the content script. */
 type PageInfoResponse = [number | null, string | null]
 
-export function receiveCurrentPagePrice(country: string, price: number): ReceiveCurrentPagePriceAction {
+export function receiveCurrentPagePrice(country: string, price: number, productID: string): ReceiveCurrentPagePriceAction {
 	return {
 		type: RECEIVE_CURRENT_PAGE_PRICE,
 		country,
-		price
+		price,
+		productID
 	}
 }
 
@@ -99,7 +102,7 @@ export function getCurrentPageUrl(): AppThunk {
 				if (response === undefined || response[0] === null) {
 					return
 				}
-				dispatch(receiveCurrentPagePrice(country, response[0]))
+				dispatch(receiveCurrentPagePrice(country, response[0], productID))
 				if (response.length > 1) {
 					dispatch(receiveCountryRank(country, response[1]))
 				}

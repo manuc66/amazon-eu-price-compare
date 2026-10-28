@@ -1,5 +1,5 @@
 import { Component } from 'react'
-import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, getMarket } from '../markets'
+import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, camelUrl, getMarket, keepaUrl } from '../markets'
 import type { Currency } from '../markets'
 import type { CountryPrice, CountryRanks, Options } from '../types'
 
@@ -7,6 +7,8 @@ export interface PriceListProps {
 	price: CountryPrice[]
 	rank: CountryRanks
 	options: Options
+	/** ASIN of the product being browsed */
+	productID: string | null
 	getOptions: () => void
 	getCurrentPageUrl: () => void
 }
@@ -18,6 +20,10 @@ interface PriceRow {
 	nativePrice: string
 	referencePrice: string
 	note?: string
+	/** camelcamelcamel price history, only for the stores it covers */
+	camel: string | null
+	/** Keepa price history, only for the stores it covers */
+	keepa: string | null
 	rank?: string | null
 }
 
@@ -46,6 +52,7 @@ export default class PriceList extends Component<PriceListProps> {
 		var showRanks = this.props.options.showRanks
 		var ranks = this.props.rank
 
+		const productID = this.props.productID
 		const prices = this.props.price.map(function(amz): PriceRow {
 			var market = getMarket(amz.country)
 			var currency = market === undefined ? REFERENCE_CURRENCY : market.currency
@@ -56,6 +63,8 @@ export default class PriceList extends Component<PriceListProps> {
 				nativePrice: formatPrice(amz.price),
 				referencePrice: formatPrice(amz.price * EUR_PER_UNIT[currency]),
 				note: market === undefined ? undefined : market.note,
+				camel: camelUrl(productID, market),
+				keepa: keepaUrl(productID, market),
 				rank: showRanks ? ranks[amz.country] : undefined
 			}
 		})
@@ -68,7 +77,26 @@ export default class PriceList extends Component<PriceListProps> {
 			return (
 				<tr key={amz.country}>
 				<td className="amazon">Amazon</td>
-				<td className="country">{amz.country.toUpperCase()}{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}</td>
+				<td className="country">
+					{amz.country.toUpperCase()}
+					{amz.note !== undefined && <span className="market-note"> ({amz.note})</span>}
+					{amz.camel !== null &&
+						<a
+							className="history"
+							href={amz.camel}
+							target="_blank"
+							title="Price history on camelcamelcamel"
+							aria-label="Price history on camelcamelcamel"
+						>🐪</a>}
+					{amz.keepa !== null &&
+						<a
+							className="history"
+							href={amz.keepa}
+							target="_blank"
+							title="Price history on Keepa"
+							aria-label="Price history on Keepa"
+						>K</a>}
+				</td>
 				{amz.currency !== REFERENCE_CURRENCY &&
 					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[amz.currency]} {amz.nativePrice}</a></td>}
 				<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[REFERENCE_CURRENCY]} {amz.referencePrice}</a></td>

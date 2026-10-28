@@ -8,7 +8,8 @@ const mapStateToProps = (state: RootState) => {
 	return {
 		price: state.price,
 		rank: state.rank,
-		options: state.options
+		options: state.options,
+		productID: state.productID
 	}
 }
 

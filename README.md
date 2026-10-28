@@ -148,6 +148,9 @@ separators.
 
 ### Unreleased
 
+- Add price history links on each row: 🐪 for camelcamelcamel and **K** for
+  Keepa. Both sites only cover some marketplaces (US, UK, DE, FR, IT, ES for our
+  stores), so NL, SE, PL, BE and IE get no history link.
 - Add an end-to-end smoke test against a real Firefox (`npm run test:e2e:firefox`,
   Marionette, headless) and `npm run start:firefox` / `start:chrome` to load the
   built extension in a browser.
