@@ -23,14 +23,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IronCore864/amazon-eu-price-compare.git"
+    "url": "git+https://codeberg.org/manuc66/amazon-eu-price-compare.git"
   },
   "author": "Tiexin Guo",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/IronCore864/amazon-eu-price-compare/issues"
+    "url": "https://codeberg.org/manuc66/amazon-eu-price-compare/issues"
   },
-  "homepage": "https://github.com/IronCore864/amazon-eu-price-compare#readme",
+  "homepage": "https://codeberg.org/manuc66/amazon-eu-price-compare#readme",
   "devDependencies": {
     "@babel/core": "^8.0.9",
     "@babel/plugin-transform-react-jsx": "^8.0.1",
