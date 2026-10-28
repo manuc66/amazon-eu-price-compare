@@ -72,7 +72,24 @@ npm run build
 
 `chrome-extension`
 
+### 6.3 Firefox
+
+The same `chrome-extension` folder is a valid Manifest V3 add-on for Firefox 140+
+(the manifest declares `browser_specific_settings.gecko`).
+
+- Temporary install: open `about:debugging#/runtime/this-firefox`, click
+  "Load Temporary Add-on" and pick `chrome-extension/manifest.json`.
+- Lint / package: `npx web-ext lint --source-dir chrome-extension` and
+  `npx web-ext build --source-dir chrome-extension`.
+
 ## 7 Changelog
+
+### Unreleased
+
+- Firefox support: add `browser_specific_settings` to the manifest.
+- Add the Amazon EU host permissions to `host_permissions` (needed by the popup
+  to fetch prices from the other stores).
+- Update all dependencies (React 19, Redux 5, Babel 8, webpack 5).
 
 ### Version 2.0 Updates
 
