@@ -1,20 +1,14 @@
 import * as amzUtil from "../util/AmazonUtils"
 import type { ThunkAction } from 'redux-thunk'
+import { MARKETS } from '../markets'
+import type { Market } from '../markets'
 import type { Options } from '../types'
 import type { RootState } from '../reducers'
 
-export const RECEIVE_CURRENCY_RATE = 'RECEIVE_CURRENCY_RATE'
 export const RECEIVE_CURRENT_PAGE_PRICE = 'RECEIVE_CURRENT_PAGE_PRICE'
 export const RECEIVE_COUNTRY_PRICE = 'RECEIVE_COUNTRY_PRICE'
 export const RECEIVE_COUNTRY_RANK = 'RECEIVE_COUNTRY_RANK'
 export const RECEIVE_OPTIONS = 'RECEIVE_OPTIONS'
-
-export interface ReceiveCurrencyRateAction {
-	type: typeof RECEIVE_CURRENCY_RATE
-	fromCurrency: string
-	toCurrency: string
-	rate: number
-}
 
 export interface ReceiveCurrentPagePriceAction {
 	type: typeof RECEIVE_CURRENT_PAGE_PRICE
@@ -41,7 +35,6 @@ export interface ReceiveOptionsAction {
 }
 
 export type Action =
-	| ReceiveCurrencyRateAction
 	| ReceiveCurrentPagePriceAction
 	| ReceiveCountryPriceAction
 	| ReceiveCountryRankAction
@@ -51,15 +44,6 @@ export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unk
 
 /** [price, rank] as sent back by the content script. */
 type PageInfoResponse = [number | null, string | null]
-
-export function receiveCurrencyRate(fromCurrency: string, toCurrency: string, rate: number): ReceiveCurrencyRateAction {
-	return {
-		type: RECEIVE_CURRENCY_RATE,
-		fromCurrency,
-		toCurrency,
-		rate
-	}
-}
 
 export function receiveCurrentPagePrice(country: string, price: number): ReceiveCurrentPagePriceAction {
 	return {
@@ -120,11 +104,10 @@ export function getCurrentPageUrl(): AppThunk {
 					dispatch(receiveCountryRank(country, response[1]))
 				}
 			})
-			var all_countries = ['uk', 'de', 'fr', 'es', 'it', 'nl', 'se', 'be']
-			var currentCountry = [country]
-			var countriesToSearch = all_countries.filter(x => currentCountry.indexOf(x) < 0)
-			for (var i = 0; i < countriesToSearch.length; i++) {
-				dispatch(getCountryPrice(productID, countriesToSearch[i]))
+
+			const marketsToSearch = MARKETS.filter((market) => market.country !== country)
+			for (const market of marketsToSearch) {
+				dispatch(getCountryPrice(productID, market))
 			}
 		})
 	}
@@ -141,21 +124,9 @@ export function getOptions(): AppThunk {
 	}
 }
 
-// async action
-export function getCurrencyRate(): AppThunk {
+export function getCountryPrice(productID: string, market: Market): AppThunk {
 	return (dispatch) => {
-		dispatch(receiveCurrencyRate("GBP", "EUR", 1.17))
-		dispatch(receiveCurrencyRate("EUR", "GBP", 0.85))
-		dispatch(receiveCurrencyRate("GBP", "SEK", 13.32))
-		dispatch(receiveCurrencyRate("SEK", "GBP", 0.075))
-		dispatch(receiveCurrencyRate("EUR", "SEK", 11.34))
-		dispatch(receiveCurrencyRate("SEK", "EUR", 0.088))
-	}
-}
-
-export function getCountryPrice(productID: string, country: string): AppThunk {
-	return (dispatch) => {
-		var url = amzUtil.generateAmazonProductPageUrlForCountry(productID, country)
+		var url = amzUtil.generateAmazonProductPageUrl(productID, market)
 		fetch(
 			url,
 			{
@@ -168,7 +139,7 @@ export function getCountryPrice(productID: string, country: string): AppThunk {
 		)
 			.then((response) => {
 				if (!response.ok) {
-					console.log(`Cannot find this item from amazon ${country}.`)
+					console.log(`Cannot find this item from amazon ${market.country}.`)
 					return
 				}
 				return response.text().then(function (html) {
@@ -179,8 +150,8 @@ export function getCountryPrice(productID: string, country: string): AppThunk {
 					if (price === null) {
 						return
 					}
-					dispatch(receiveCountryPrice(country, price, url))
-					dispatch(receiveCountryRank(country, rank))
+					dispatch(receiveCountryPrice(market.country, price, url))
+					dispatch(receiveCountryRank(market.country, rank))
 				})
 			})
 			.catch(function (err: unknown) {

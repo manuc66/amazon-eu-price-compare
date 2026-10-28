@@ -14,17 +14,21 @@ Install now and be part of the 1874 proud user base (as of Dec 26th, 2020).
 
 OK. You live in Europe, and you want to buy something off Amazon. Of course, you want the best price.
 
-If you are a frequent Amazon user living in Europe, chances are, you have already known the fact that among the European countries, Amazon has not only 1, but many different stores. At the time of Dec 2020, there are:
+If you are a frequent Amazon user living in Europe, chances are, you have already known the fact that among the European countries, Amazon has not only 1, but many different stores. The ten European marketplaces compared by the extension are:
 
+- amazon.co.uk (GBP)
 - amazon.de
 - amazon.es
 - amazon.fr
 - amazon.it
 - amazon.nl
-- amazon.co.uk
-- amazon.se (newly launched on Oct 28, 2020)
+- amazon.pl (PLN)
+- amazon.se (SEK)
+- amazon.com.be
+- amazon.ie (EUR, launched in March 2025)
 
-And the number probably will still increase.
+They are listed in `src/markets.ts`, which is the single place to edit to change
+what the extension compares, and a test keeps the two manifests in sync with it.
 
 If you are a frequent Amazon user living in Europe, chances are, you have also already figured out that most of the items are sold in all the markets above; they can be shipped within EU; but the prices differ, sometimes greatly.
 
@@ -101,15 +105,24 @@ npm test          # vitest + jsdom, single run
 npm run test:watch
 ```
 
-Covered: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the reducers
-and the content script message handling. The price fixtures use both the German
-(`1.234,56 €`) and British (`£1,234.56`) formats on purpose: the Amazon markets
-disagree on decimal and thousands separators.
+Covered: the Amazon page parsing rules (`src/util/AmazonUtils.ts`), the market
+table, the price list rendering, the reducers, the content script message
+handling, and the consistency between `src/markets.ts` and the two manifests.
+
+The price fixtures use both the German (`1.234,56 €`) and British (`£1,234.56`)
+formats on purpose: the Amazon markets disagree on decimal and thousands
+separators.
 
 ## 7 Changelog
 
 ### Unreleased
 
+- Compare the two missing European marketplaces: **amazon.pl** (PLN) and
+  **amazon.ie** (EUR), for ten stores in total.
+- Replace the hardcoded country list, the per-country display branches and the
+  currency-pair rates by a single market table (`src/markets.ts`): markets,
+  domains and `EUR_PER_UNIT` rates in one place. The comparison always converts
+  to EUR and shows the native price when the store does not use the euro.
 - Add a test suite (vitest + jsdom) covering the price/rank parsing, the reducers
   and the content script.
 - Fix the legacy price parsing: prices with a thousands separator were misread

@@ -1,22 +1,12 @@
 import type { Reducer } from 'redux'
 import {
-	RECEIVE_CURRENCY_RATE,
 	RECEIVE_CURRENT_PAGE_PRICE,
 	RECEIVE_COUNTRY_PRICE,
 	RECEIVE_COUNTRY_RANK,
 	RECEIVE_OPTIONS
 } from '../actions'
 import type { Action } from '../actions'
-import type { CountryPrice, CountryRanks, CurrencyRates, Options } from '../types'
-
-const rate: Reducer<CurrencyRates, Action> = (state = {}, action) => {
-	switch (action.type) {
-		case RECEIVE_CURRENCY_RATE:
-			return Object.assign({}, state, { [`${action.fromCurrency}${action.toCurrency}`]: action.rate })
-		default:
-			return state
-	}
-}
+import type { CountryPrice, CountryRanks, Options } from '../types'
 
 const price: Reducer<CountryPrice[], Action> = (state = [], action) => {
 	switch (action.type) {
@@ -47,16 +37,14 @@ const options: Reducer<Options, Action> = (state = { showRanks: false }, action)
 	}
 }
 
-/** Shape of the redux store, see src/types.ts for the individual slices. */
+/** Shape of the redux store. */
 export interface AppState {
-	rate: CurrencyRates
 	price: CountryPrice[]
 	rank: CountryRanks
 	options: Options
 }
 
 const initialState: AppState = {
-	rate: {},
 	price: [],
 	rank: {},
 	options: { showRanks: false }
@@ -68,22 +56,15 @@ const initialState: AppState = {
 // previous state object when no slice changed, so unrelated actions do not look
 // like a state update to react-redux.
 const rootReducer: Reducer<AppState, Action> = (state = initialState, action) => {
-	const nextRate = rate(state.rate, action)
 	const nextPrice = price(state.price, action)
 	const nextRank = rank(state.rank, action)
 	const nextOptions = options(state.options, action)
 
-	if (
-		nextRate === state.rate &&
-		nextPrice === state.price &&
-		nextRank === state.rank &&
-		nextOptions === state.options
-	) {
+	if (nextPrice === state.price && nextRank === state.rank && nextOptions === state.options) {
 		return state
 	}
 
 	return {
-		rate: nextRate,
 		price: nextPrice,
 		rank: nextRank,
 		options: nextOptions

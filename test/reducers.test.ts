@@ -3,7 +3,6 @@ import rootReducer from '../src/reducers'
 import {
 	RECEIVE_COUNTRY_PRICE,
 	RECEIVE_COUNTRY_RANK,
-	RECEIVE_CURRENCY_RATE,
 	RECEIVE_CURRENT_PAGE_PRICE,
 	RECEIVE_OPTIONS
 } from '../src/actions'
@@ -12,39 +11,12 @@ import type { Action } from '../src/actions'
 const UNKNOWN_ACTION = { type: '@@unknown' } as unknown as Action
 
 describe('rootReducer', () => {
-	it('starts with empty slices and ranks hidden', () => {
+	it('starts empty, with ranks hidden', () => {
 		expect(rootReducer(undefined, UNKNOWN_ACTION)).toEqual({
-			rate: {},
 			price: [],
 			rank: {},
 			options: { showRanks: false }
 		})
-	})
-
-	it('stores a conversion rate under its currency pair', () => {
-		const state = rootReducer(undefined, {
-			type: RECEIVE_CURRENCY_RATE,
-			fromCurrency: 'GBP',
-			toCurrency: 'EUR',
-			rate: 1.17
-		})
-		expect(state.rate).toEqual({ GBPEUR: 1.17 })
-	})
-
-	it('keeps the other rates when a new one arrives', () => {
-		let state = rootReducer(undefined, {
-			type: RECEIVE_CURRENCY_RATE,
-			fromCurrency: 'GBP',
-			toCurrency: 'EUR',
-			rate: 1.17
-		})
-		state = rootReducer(state, {
-			type: RECEIVE_CURRENCY_RATE,
-			fromCurrency: 'EUR',
-			toCurrency: 'SEK',
-			rate: 11.34
-		})
-		expect(state.rate).toEqual({ GBPEUR: 1.17, EURSEK: 11.34 })
 	})
 
 	it('marks the price of the current page', () => {
@@ -66,7 +38,8 @@ describe('rootReducer', () => {
 	it('accumulates one price per store', () => {
 		let state = rootReducer(undefined, { type: RECEIVE_CURRENT_PAGE_PRICE, country: 'de', price: 42.5 })
 		state = rootReducer(state, { type: RECEIVE_COUNTRY_PRICE, country: 'fr', price: 39, url: 'https://www.amazon.fr/dp/B08N5WRWNW/' })
-		expect(state.price.map((p) => p.country).sort()).toEqual(['de', 'fr'])
+		state = rootReducer(state, { type: RECEIVE_COUNTRY_PRICE, country: 'pl', price: 180, url: 'https://www.amazon.pl/dp/B08N5WRWNW/' })
+		expect(state.price.map((p) => p.country).sort()).toEqual(['de', 'fr', 'pl'])
 	})
 
 	it('stores the rank per country', () => {

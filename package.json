@@ -1,7 +1,7 @@
 {
   "name": "amazon-eu-price-compare",
   "version": "2.0.0",
-  "description": "This extension compares price from amazon de, it, es, fr, nl, be and uk",
+  "description": "This extension compares prices across the ten European Amazon marketplaces (de, fr, it, es, nl, pl, se, be, ie, uk)",
   "main": "content.js",
   "scripts": {
     "build": "npm run typecheck && npm run build:chrome && npm run build:firefox",
@@ -31,6 +31,7 @@
     "@babel/preset-env": "^8.0.7",
     "@babel/preset-typescript": "^8.0.7",
     "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/redux-logger": "^3.0.13",

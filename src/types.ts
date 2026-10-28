@@ -7,9 +7,6 @@ export interface CountryPrice {
 	url?: string
 }
 
-/** Conversion rates, keyed by currency pair, e.g. `GBPEUR`. */
-export type CurrencyRates = Record<string, number>
-
 /** Best seller rank, keyed by country. */
 export type CountryRanks = Record<string, string | null>
 

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-	generateAmazonProductPageUrlForCountry,
+	generateAmazonProductPageUrl,
 	getCountryFromAmazonProductPageUrl,
 	getPriceFromAmazonProductDetailPage,
 	getProductIDFromAmazonProductPageUrl,
 	getRank
 } from '../src/util/AmazonUtils'
+import { getMarket } from '../src/markets'
 
 function parsePage(body: string): Document {
 	return new DOMParser().parseFromString(`<!doctype html><html><body>${body}</body></html>`, 'text/html')
@@ -124,22 +125,28 @@ describe('getCountryFromAmazonProductPageUrl', () => {
 		['https://www.amazon.nl/dp/B08N5WRWNW', 'nl'],
 		['https://www.amazon.se/dp/B08N5WRWNW', 'se'],
 		['https://www.amazon.co.uk/dp/B08N5WRWNW', 'uk'],
-		['https://www.amazon.com.be/dp/B08N5WRWNW', 'be']
+		['https://www.amazon.com.be/dp/B08N5WRWNW', 'be'],
+		['https://www.amazon.pl/dp/B08N5WRWNW', 'pl'],
+		['https://www.amazon.ie/dp/B08N5WRWNW', 'ie']
 	])('finds the store of %s', (url, expected) => {
 		expect(getCountryFromAmazonProductPageUrl(url)).toBe(expected)
 	})
 
 	it('returns null for a store the extension does not support', () => {
 		expect(getCountryFromAmazonProductPageUrl('https://www.amazon.com/dp/B08N5WRWNW')).toBeNull()
+		expect(getCountryFromAmazonProductPageUrl('https://www.amazon.com.tr/dp/B08N5WRWNW')).toBeNull()
 	})
 })
 
-describe('generateAmazonProductPageUrlForCountry', () => {
+describe('generateAmazonProductPageUrl', () => {
 	it.each([
 		['uk', 'https://www.amazon.co.uk/dp/B08N5WRWNW/'],
 		['be', 'https://www.amazon.com.be/dp/B08N5WRWNW/'],
-		['de', 'https://www.amazon.de/dp/B08N5WRWNW/']
+		['de', 'https://www.amazon.de/dp/B08N5WRWNW/'],
+		['pl', 'https://www.amazon.pl/dp/B08N5WRWNW/']
 	])('builds the %s product url', (country, expected) => {
-		expect(generateAmazonProductPageUrlForCountry('B08N5WRWNW', country)).toBe(expected)
+		const market = getMarket(country)
+		expect(market).toBeDefined()
+		expect(generateAmazonProductPageUrl('B08N5WRWNW', market!)).toBe(expected)
 	})
 })

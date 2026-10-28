@@ -1,23 +1,25 @@
 import { Component } from 'react'
-import type { CountryPrice, CountryRanks, CurrencyRates, Options } from '../types'
+import { CURRENCY_SYMBOLS, EUR_PER_UNIT, REFERENCE_CURRENCY, getMarket } from '../markets'
+import type { CountryPrice, CountryRanks, Options } from '../types'
 
 export interface PriceListProps {
 	price: CountryPrice[]
-	rate: CurrencyRates
 	rank: CountryRanks
 	options: Options
 	getOptions: () => void
-	getCurrencyRate: () => void
 	getCurrentPageUrl: () => void
 }
 
 interface PriceRow {
 	country: string
 	url?: string
-	eurPrice: number | string
-	gbpPrice: number | string
-	sekPrice: number | string
+	nativePrice: string
+	referencePrice: string
 	rank?: string | null
+}
+
+function formatPrice(value: number): string {
+	return value.toFixed(2)
 }
 
 export default class PriceList extends Component<PriceListProps> {
@@ -28,7 +30,6 @@ export default class PriceList extends Component<PriceListProps> {
 				this.props.getCurrentPageUrl()
 			}
 		})
-		this.props.getCurrencyRate()
 		this.props.getCurrentPageUrl()
 	}
 
@@ -39,68 +40,36 @@ export default class PriceList extends Component<PriceListProps> {
 				)
 		}
 
-		var currentCountry = ''
-		this.props.price.forEach(function(amz) {
-			if (amz.current == true) {
-				currentCountry = amz.country
-			}
-		})
-
-		var GBPEUR = this.props.rate.GBPEUR
-		var EURGBP = this.props.rate.EURGBP
-		var GBPSEK = this.props.rate.GBPSEK
-		var SEKGBP = this.props.rate.SEKGBP
-		var EURSEK = this.props.rate.EURSEK
-		var SEKEUR = this.props.rate.SEKEUR
-
-		var prices: PriceRow[] = this.props.price.map(function(amz) {
-			if (amz.country == 'uk') {
-				return {
-					country: amz.country,
-					url: amz.url,
-					gbpPrice: amz.price,
-					sekPrice: (amz.price * GBPSEK).toFixed(2),
-					eurPrice: (amz.price * GBPEUR).toFixed(2)
-				}
-			} else if (amz.country == 'se') {
-				return {
-					country: amz.country,
-					url: amz.url,
-					sekPrice: amz.price,
-					gbpPrice: (amz.price * SEKGBP).toFixed(2),
-					eurPrice: (amz.price * SEKEUR).toFixed(2)
-				}
-			} else {
-				return {
-					country: amz.country,
-					url: amz.url,
-					eurPrice: amz.price,
-					gbpPrice: (amz.price * EURGBP).toFixed(2),
-					sekPrice: (amz.price * EURSEK).toFixed(2)
-				}
-			}
-		})
-
-		prices = prices.sort(function(a, b) {
-			return Number(a.eurPrice) - Number(b.eurPrice)
-		})
-
 		var showRanks = this.props.options.showRanks
-		if (showRanks) {
-			var ranks = this.props.rank
-			prices = prices.map(function(amz) {
-				return { ...amz, rank: ranks[amz.country] }
-			})
-		}
+		var ranks = this.props.rank
+		const referenceSymbol = CURRENCY_SYMBOLS[REFERENCE_CURRENCY]
+
+		const prices = this.props.price.map(function(amz): PriceRow {
+			var market = getMarket(amz.country)
+			var currency = market === undefined ? REFERENCE_CURRENCY : market.currency
+			return {
+				country: amz.country,
+				url: amz.url,
+				nativePrice: formatPrice(amz.price),
+				referencePrice: formatPrice(amz.price * EUR_PER_UNIT[currency]),
+				rank: showRanks ? ranks[amz.country] : undefined
+			}
+		})
+
+		prices.sort(function(a, b) {
+			return Number(a.referencePrice) - Number(b.referencePrice)
+		})
 
 		const price_list = prices.map(function(amz) {
+			var market = getMarket(amz.country)
+			var currency = market === undefined ? REFERENCE_CURRENCY : market.currency
 			return (
 				<tr key={amz.country}>
 				<td className="amazon">Amazon</td>
 				<td className="country">{amz.country.toUpperCase()}</td>
-				{currentCountry == 'uk' && <td className="price"><a href={amz.url} target="_blank">&pound; {amz.gbpPrice}</a></td>}
-				{currentCountry == 'se' && <td className="price"><a href={amz.url} target="_blank">kr {amz.sekPrice}</a></td>}
-				<td className="price"><a href={amz.url} target="_blank">&euro; {amz.eurPrice}</a></td>
+				{currency !== REFERENCE_CURRENCY &&
+					<td className="price"><a href={amz.url} target="_blank">{CURRENCY_SYMBOLS[currency]} {amz.nativePrice}</a></td>}
+				<td className="price"><a href={amz.url} target="_blank">{referenceSymbol} {amz.referencePrice}</a></td>
 				{showRanks === true &&
 					<td className="rank">{amz.rank}</td>}
 					</tr>

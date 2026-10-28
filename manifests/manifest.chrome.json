@@ -17,14 +17,16 @@
     "storage"
   ],
   "host_permissions": [
+    "*://www.amazon.co.uk/*",
     "*://www.amazon.de/*",
     "*://www.amazon.fr/*",
     "*://www.amazon.it/*",
     "*://www.amazon.es/*",
     "*://www.amazon.nl/*",
     "*://www.amazon.se/*",
-    "*://www.amazon.co.uk/*",
+    "*://www.amazon.pl/*",
     "*://www.amazon.com.be/*",
+    "*://www.amazon.ie/*",
     "https://ajax.googleapis.com/"
   ],
   "options_ui": {
@@ -33,14 +35,16 @@
   "content_scripts": [
     {
       "matches": [
+        "*://www.amazon.co.uk/*",
         "*://www.amazon.de/*",
         "*://www.amazon.fr/*",
         "*://www.amazon.it/*",
         "*://www.amazon.es/*",
         "*://www.amazon.nl/*",
         "*://www.amazon.se/*",
-        "*://www.amazon.co.uk/*",
-        "*://www.amazon.com.be/*"
+        "*://www.amazon.pl/*",
+        "*://www.amazon.com.be/*",
+        "*://www.amazon.ie/*"
       ],
       "js": [
         "content.js"

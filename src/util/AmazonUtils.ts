@@ -1,3 +1,6 @@
+import { getMarketForUrl } from '../markets'
+import type { Market } from '../markets'
+
 export function getProductIDFromAmazonProductPageUrl(url: string): string | null {
 	var re = /amazon.*\/([A-Z0-9]{10})(\/|\?|$)/
 	var match = re.exec(url)
@@ -10,27 +13,12 @@ export function getProductIDFromAmazonProductPageUrl(url: string): string | null
 }
 
 export function getCountryFromAmazonProductPageUrl(url: string): string | null {
-	var re = /amazon(\.co|\.com)*\.(uk|fr|de|it|es|nl|se|be)/
-	var match = re.exec(url)
-	if (url.match(re)) {
-		return match ? match[2] : null
-	}
-	else {
-		return null
-	}
+	var market = getMarketForUrl(url)
+	return market === undefined ? null : market.country
 }
 
-export function generateAmazonProductPageUrlForCountry(productID: string, country: string): string {
-	var searchUrlPrefix = 'https://www.amazon.'
-	var countryDomain = country.toLowerCase();
-	if (countryDomain === 'uk') {
-		countryDomain = 'co.uk'
-	}
-	if (countryDomain === 'be') {
-		countryDomain = 'com.be'
-	}
-	var searchUrlSuffix = '/dp/'
-	return searchUrlPrefix + countryDomain + searchUrlSuffix + productID + '/'
+export function generateAmazonProductPageUrl(productID: string, market: Market): string {
+	return 'https://www.' + market.domain + '/dp/' + productID + '/'
 }
 
 function damnYouEuropeanNumbers(price: string): string {
