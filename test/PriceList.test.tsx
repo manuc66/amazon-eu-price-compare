@@ -8,7 +8,7 @@ const ASIN = 'B08N5WRWNW'
 function render(
 	price: CountryPrice[],
 	rank: CountryRanks = {},
-	options: Options = { showRanks: false, showUsMarket: true },
+	options: Options = { showRanks: false, enabledCountries: ['uk','de','fr','it','es','nl','se','pl','be','ie','us'] },
 	productID: string | null = ASIN,
 	loading = false
 ): string {
@@ -44,14 +44,14 @@ describe('PriceList', () => {
 	})
 
 	it('shows a spinner instead of the message while the first prices load', () => {
-		const html = render([], {}, { showRanks: false, showUsMarket: true }, ASIN, true)
+		const html = render([], {}, { showRanks: false, enabledCountries: [] }, ASIN, true)
 		expect(html).toContain('Fetching prices')
 		expect(html).toContain('spinner')
 		expect(html).not.toContain('Not amazon product detail page')
 	})
 
 	it('keeps the table and shows a progress bar while more prices load', () => {
-		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, showUsMarket: true }, ASIN, true)
+		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, enabledCountries: [] }, ASIN, true)
 		expect(html).toContain('progress-bar')
 		expect(html).toContain('>DE<')
 	})
@@ -145,14 +145,14 @@ describe('PriceList', () => {
 	})
 
 	it('builds no history link outside a product page', () => {
-		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, showUsMarket: true }, null)
+		const html = render([{ country: 'de', price: 20 }], {}, { showRanks: false, enabledCountries: [] }, null)
 		expect(html).not.toContain('camelcamelcamel')
 	})
 
 	it('adds the rank column only when the option is enabled', () => {
 		const price = [{ country: 'de', price: 20 }]
-		const withoutRanks = render(price, { de: '#1 in Electronics' }, { showRanks: false, showUsMarket: false })
-		const withRanks = render(price, { de: '#1 in Electronics' }, { showRanks: true, showUsMarket: false })
+		const withoutRanks = render(price, { de: '#1 in Electronics' }, { showRanks: false, enabledCountries: [] })
+		const withRanks = render(price, { de: '#1 in Electronics' }, { showRanks: true, enabledCountries: [] })
 
 		expect(withoutRanks).not.toContain('#1 in Electronics')
 		expect(withRanks).toContain('#1 in Electronics')

@@ -50,6 +50,26 @@ body {
   padding: 20px;
 }
 
+.markets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 20px 10px 20px;
+}
+
+.markets label {
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.markets .market-domain {
+  color: #666;
+}
+
+.markets .market-note {
+  color: #a15c00;
+}
+
 .options-help {
   font-size: 13px;
   color: #666;
@@ -116,18 +136,14 @@ input:checked + .slider:before {
   </label>
 </div>
 
-<div class="options-container">
+<div class="options-section">
   <div class="options-label">
-    Compare with amazon.com (US)
+    Stores to compare
     <div class="options-help">
-      Prices on amazon.com exclude European VAT and international shipping,
-      so they are only indicative.
+      Untick a store to leave it out of the comparison.
     </div>
   </div>
-  <label class="switch">
-    <input type="checkbox" id="show-us-market">
-    <div class="slider round"></div>
-  </label>
+  <div id="markets" class="markets"></div>
 </div>
 
 <div class="save-container">

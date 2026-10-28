@@ -8,6 +8,7 @@ import {
 	RECEIVE_OPTIONS
 } from '../actions'
 import type { Action } from '../actions'
+import { DEFAULT_ENABLED_COUNTRIES } from '../markets'
 import type { CountryPrice, CountryRanks, Options } from '../types'
 
 const price: Reducer<CountryPrice[], Action> = (state = [], action) => {
@@ -30,7 +31,7 @@ const rank: Reducer<CountryRanks, Action> = (state = {}, action) => {
 	}
 }
 
-const options: Reducer<Options, Action> = (state = { showRanks: false, showUsMarket: false }, action) => {
+const options: Reducer<Options, Action> = (state = { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES }, action) => {
 	switch (action.type) {
 		case RECEIVE_OPTIONS:
 			return action.items
@@ -73,7 +74,7 @@ export interface AppState {
 const initialState: AppState = {
 	price: [],
 	rank: {},
-	options: { showRanks: false, showUsMarket: false },
+	options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 	productID: null,
 	pending: 0
 }

@@ -1,6 +1,6 @@
 import * as amzUtil from "../util/AmazonUtils"
 import type { ThunkAction } from 'redux-thunk'
-import { marketsToCompare } from '../markets'
+import { DEFAULT_ENABLED_COUNTRIES, MARKETS, marketsToCompare } from '../markets'
 import type { Market } from '../markets'
 import type { Options } from '../types'
 import type { RootState } from '../reducers'
@@ -55,6 +55,14 @@ export type Action =
 	| ReceiveOptionsAction
 
 export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, Action>
+
+/** Keeps only the known country codes, falling back to the defaults. */
+function readCountries(value: unknown): string[] {
+	if (!Array.isArray(value)) {
+		return DEFAULT_ENABLED_COUNTRIES
+	}
+	return MARKETS.map((market) => market.country).filter((country) => value.includes(country))
+}
 
 /** [price, rank] as sent back by the content script. */
 type PageInfoResponse = [number | null, string | null]
@@ -131,7 +139,7 @@ export function getCurrentPageUrl(): AppThunk {
 				}
 			})
 
-			const markets = marketsToCompare(country, getState().options.showUsMarket)
+			const markets = marketsToCompare(country, getState().options.enabledCountries)
 			for (const market of markets) {
 				dispatch(getCountryPrice(productID, market))
 			}
@@ -144,11 +152,11 @@ export function getOptions(): AppThunk {
 	return (dispatch) => {
 		chrome.storage.sync.get({
 			showRanks: false,
-			showUsMarket: false
+			enabledCountries: DEFAULT_ENABLED_COUNTRIES
 		}, function (items) {
 			dispatch(receiveOptions({
 				showRanks: items['showRanks'] === true,
-				showUsMarket: items['showUsMarket'] === true
+				enabledCountries: readCountries(items['enabledCountries'])
 			}))
 		})
 	}

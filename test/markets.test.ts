@@ -80,20 +80,20 @@ describe('getMarketForUrl', () => {
 
 describe('marketsToCompare', () => {
 	it('compares the other European stores by default', () => {
-		const countries = marketsToCompare('de', false).map((market) => market.country)
+		const countries = marketsToCompare('de', MARKETS.filter((m) => m.optional !== true).map((m) => m.country)).map((market) => market.country)
 		expect(countries).toHaveLength(9)
 		expect(countries).not.toContain('de')
 		expect(countries).not.toContain('us')
 	})
 
 	it('adds amazon.com when the user enabled it', () => {
-		const countries = marketsToCompare('de', true).map((market) => market.country)
+		const countries = marketsToCompare('de', MARKETS.map((m) => m.country)).map((market) => market.country)
 		expect(countries).toHaveLength(10)
 		expect(countries).toContain('us')
 	})
 
 	it('never compares the store the user is browsing', () => {
-		expect(marketsToCompare('us', true).map((market) => market.country)).not.toContain('us')
+		expect(marketsToCompare('us', MARKETS.map((m) => m.country)).map((market) => market.country)).not.toContain('us')
 	})
 })
 

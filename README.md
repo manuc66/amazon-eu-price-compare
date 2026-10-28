@@ -154,8 +154,12 @@ separators.
 - Add an end-to-end smoke test against a real Firefox (`npm run test:e2e:firefox`,
   Marionette, headless) and `npm run start:firefox` / `start:chrome` to load the
   built extension in a browser.
-- Optional comparison with **amazon.com** (USD), disabled by default: prices
-  there exclude VAT and shipping, so the row is marked as indicative.
+- Choose the stores to compare in the options page: one checkbox per
+  marketplace. All European stores are on by default, **amazon.com** is off
+  (its prices exclude VAT and shipping, the row is marked as indicative).
+- Loading feedback: a spinner while the first prices arrive, then a thin
+  progress bar above the table, and a fixed popup width so the panel no longer
+  resizes while rows are added.
 - Compare the two missing European marketplaces: **amazon.pl** (PLN) and
   **amazon.ie** (EUR), for ten stores in total.
 - Replace the hardcoded country list, the per-country display branches and the

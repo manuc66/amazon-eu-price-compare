@@ -9,6 +9,7 @@ import {
 	RECEIVE_OPTIONS
 } from '../src/actions'
 import type { Action } from '../src/actions'
+import { DEFAULT_ENABLED_COUNTRIES } from '../src/markets'
 
 const UNKNOWN_ACTION = { type: '@@unknown' } as unknown as Action
 
@@ -17,7 +18,7 @@ describe('rootReducer', () => {
 		expect(rootReducer(undefined, UNKNOWN_ACTION)).toEqual({
 			price: [],
 			rank: {},
-			options: { showRanks: false, showUsMarket: false },
+			options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 			productID: null,
 			pending: 0
 		})
@@ -55,8 +56,8 @@ describe('rootReducer', () => {
 	})
 
 	it('replaces the options', () => {
-		const state = rootReducer(undefined, { type: RECEIVE_OPTIONS, items: { showRanks: true, showUsMarket: true } })
-		expect(state.options).toEqual({ showRanks: true, showUsMarket: true })
+		const state = rootReducer(undefined, { type: RECEIVE_OPTIONS, items: { showRanks: true, enabledCountries: ['de'] } })
+		expect(state.options).toEqual({ showRanks: true, enabledCountries: ['de'] })
 	})
 
 	it('counts the in-flight requests', () => {

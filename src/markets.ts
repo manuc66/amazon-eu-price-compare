@@ -101,10 +101,15 @@ export function keepaUrl(productID: string | null, market: Market | undefined): 
 	return `https://keepa.com/#!product/${market.keepa}-${productID}`
 }
 
+/** Stores compared by default: every European store, amazon.com only on demand. */
+export const DEFAULT_ENABLED_COUNTRIES: string[] = MARKETS
+	.filter((market) => market.optional !== true)
+	.map((market) => market.country)
+
 /** The stores to compare with the page being browsed. */
-export function marketsToCompare(currentCountry: string, includeOptionalMarkets: boolean): Market[] {
+export function marketsToCompare(currentCountry: string, enabledCountries: string[]): Market[] {
 	return MARKETS.filter((market) =>
-		market.country !== currentCountry && (market.optional !== true || includeOptionalMarkets)
+		market.country !== currentCountry && enabledCountries.includes(market.country)
 	)
 }
 

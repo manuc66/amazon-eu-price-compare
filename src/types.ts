@@ -13,6 +13,6 @@ export type CountryRanks = Record<string, string | null>
 /** Values read from `chrome.storage.sync`. */
 export interface Options {
 	showRanks: boolean
-	/** compare with amazon.com too (prices exclude VAT and shipping) */
-	showUsMarket: boolean
+	/** country codes of the stores to compare, see src/markets.ts */
+	enabledCountries: string[]
 }

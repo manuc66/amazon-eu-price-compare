@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentPageUrl } from '../src/actions'
 import type { Action } from '../src/actions'
 import type { RootState } from '../src/reducers'
-import { marketsToCompare } from '../src/markets'
+import { DEFAULT_ENABLED_COUNTRIES, marketsToCompare } from '../src/markets'
 
 const ASIN = 'B08N5WRWNW'
 
@@ -10,7 +10,7 @@ function state(): RootState {
 	return {
 		price: [],
 		rank: {},
-		options: { showRanks: false, showUsMarket: false },
+		options: { showRanks: false, enabledCountries: DEFAULT_ENABLED_COUNTRIES },
 		productID: null,
 		pending: 0
 	}
@@ -57,7 +57,7 @@ describe('getCurrentPageUrl', () => {
 
 	it('starts and finishes one request per store, plus the page itself', async () => {
 		const actions = await run(`https://www.amazon.de/dp/${ASIN}`)
-		const expected = 1 + marketsToCompare('de', false).length
+		const expected = 1 + marketsToCompare('de', DEFAULT_ENABLED_COUNTRIES).length
 
 		expect(count(actions, 'REQUEST_STARTED')).toBe(expected)
 		expect(count(actions, 'REQUEST_FINISHED')).toBe(expected)
