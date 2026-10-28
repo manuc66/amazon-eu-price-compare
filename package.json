@@ -4,8 +4,13 @@
   "description": "This extension compares price from amazon de, it, es, fr, nl, be and uk",
   "main": "content.js",
   "scripts": {
-    "build": "NODE_ENV=production webpack",
-    "zip": "zip -r chrome-extension/chrome-extension.zip chrome-extension"
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "node scripts/build.js chrome",
+    "build:firefox": "node scripts/build.js firefox",
+    "lint:firefox": "npx --yes web-ext lint --source-dir dist/firefox",
+    "zip": "npm run zip:chrome && npm run zip:firefox",
+    "zip:chrome": "cd dist/chrome && zip -qr ../amazon-eu-price-compare-chrome.zip .",
+    "zip:firefox": "cd dist/firefox && zip -qr ../amazon-eu-price-compare-firefox.zip ."
   },
   "repository": {
     "type": "git",

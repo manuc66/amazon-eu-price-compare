@@ -68,25 +68,37 @@ npm i
 npm run build
 ```
 
-### 6.2 Unpacked chrome extension dir
+### 6.2 Build output
 
-`chrome-extension`
+`npm run build` produces one unpacked extension per browser:
 
-### 6.3 Firefox
+- `dist/chrome` — Chromium based browsers (Chrome, Edge, Brave, Opera)
+- `dist/firefox` — Firefox 140+
 
-The same `chrome-extension` folder is a valid Manifest V3 add-on for Firefox 140+
-(the manifest declares `browser_specific_settings.gecko`).
+`npm run build:chrome` and `npm run build:firefox` build a single target.
+`npm run zip` creates `dist/amazon-eu-price-compare-chrome.zip` and
+`dist/amazon-eu-price-compare-firefox.zip`.
 
-- Temporary install: open `about:debugging#/runtime/this-firefox`, click
-  "Load Temporary Add-on" and pick `chrome-extension/manifest.json`.
-- Lint / package: `npx web-ext lint --source-dir chrome-extension` and
-  `npx web-ext build --source-dir chrome-extension`.
+Each target gets its own manifest from `manifests/`, the files shared by both
+browsers (html, icons) live in `extension/`.
+
+### 6.3 Load the extension
+
+- Chrome: `chrome://extensions` → enable Developer mode → "Load unpacked" →
+  select `dist/chrome`.
+- Firefox: `about:debugging#/runtime/this-firefox` → "Load Temporary Add-on" →
+  select `dist/firefox/manifest.json`.
+- Validate the Firefox package: `npm run lint:firefox`.
 
 ## 7 Changelog
 
 ### Unreleased
 
-- Firefox support: add `browser_specific_settings` to the manifest.
+- Firefox support: `manifests/manifest.firefox.json` adds the
+  `browser_specific_settings.gecko` block (id, `strict_min_version` 140 and the
+  `data_collection_permissions` required by AMO).
+- Split the build per browser: `npm run build` now outputs `dist/chrome` and
+  `dist/firefox`, each with its own manifest.
 - Add the Amazon EU host permissions to `host_permissions` (needed by the popup
   to fetch prices from the other stores).
 - Update all dependencies (React 19, Redux 5, Babel 8, webpack 5).

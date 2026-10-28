@@ -1,4 +1,4 @@
 node_modules
-chrome-extension/chrome-extension.zip
-chrome-extension/*.js
+dist/
+.idea/
 _config.yml

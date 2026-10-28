@@ -1,5 +1,8 @@
 const path = require('path')
 
+// set by scripts/build.js, which builds one browser target at a time
+const outputDir = process.env.EXTENSION_OUTPUT_DIR || path.resolve(__dirname, 'dist', 'chrome')
+
 module.exports = {
   entry: {
     'popup': './src/index.js',
@@ -7,7 +10,7 @@ module.exports = {
     'options': './src/chrome/options.js'
   },
   output: {
-    path: path.resolve(__dirname, 'chrome-extension'),
+    path: outputDir,
     filename: '[name].js'
   },
   module: {
